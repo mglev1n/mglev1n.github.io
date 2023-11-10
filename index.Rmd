@@ -16,7 +16,7 @@ output:
  
 ## Bio
 
-Dr. Levin is a cardiologist and genetic epidemiologist at the University of Pennsylvania, and studies the inherited basis of cardiovascular disease. Using computational and statistical genetics methods, he seeks to define the biological pathways and risk factors that contribute to cardiometabolic heart and vascular diseases. Ultimately he hopes to apply genomic and precision medicine methods to improve the care for patients with cardiovascular disease, with a particular focus on identifying biologic pathways that improve risk stratification and treatment.
+Dr. Levin is a cardiologist and genetic epidemiologist at the University of Pennsylvania and Philadelphia VA Medical Center, and studies the inherited basis of cardiovascular disease. Using computational and statistical genetics methods, he seeks to define the biological pathways and risk factors that contribute to cardiometabolic heart and vascular diseases. Ultimately he hopes to apply genomic and precision medicine methods to improve the care for patients with cardiovascular disease, with a particular focus on identifying biologic pathways that improve risk stratification and treatment.
 
 
 ## Education
