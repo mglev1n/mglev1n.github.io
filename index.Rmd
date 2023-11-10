@@ -16,7 +16,7 @@ output:
  
 ## Bio
 
-Dr. Levin is a cardiology fellow at the University of Pennsylvania, and studies the inherited basis of cardiovascular disease. Using computational and statistical genetics methods, he seeks to define the biological pathways and risk factors that contribute to cardiometabolic heart and vascular diseases. Ultimately he hopes to apply genomic and precision medicine methods to improve the care for patients with cardiovascular disease, with a particular focus on identifying biologic pathways that improve risk stratification and treatment.
+Dr. Levin is a cardiologist and genetic epidemiologist at the University of Pennsylvania, and studies the inherited basis of cardiovascular disease. Using computational and statistical genetics methods, he seeks to define the biological pathways and risk factors that contribute to cardiometabolic heart and vascular diseases. Ultimately he hopes to apply genomic and precision medicine methods to improve the care for patients with cardiovascular disease, with a particular focus on identifying biologic pathways that improve risk stratification and treatment.
 
 
 ## Education
@@ -36,6 +36,14 @@ BA in Biological Basis of Behavior | 2007 - 2011
 
 ## Clincal Training
 
-**Hospital of the University of Pennsylvania** | Fellowship in Cardiovascular Medicine | 2019 - present
+**Hospital of the University of Pennsylvania** | Fellowship in Cardiovascular Medicine | 2019 - 2023
 
 **Hospital of the University of Pennsylvania** | Intern/Resident in Internal Medicine | 2016 - 2019
+
+## Board Certifications
+
+**Cardiovascular Disease (American Board of Internal Medicine)** | 2022 -
+
+**Adult Comprehensive Echocardiography (National Board of Echocardiography)** | 2021 - 
+
+**Internal Medicine (American Board of Internal Medicine)** | 2019 -
