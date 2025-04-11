@@ -11,7 +11,7 @@
         .mobile-menu {
             display: none;
         }
-        
+
         .mobile-menu.active {
             display: block;
         }
@@ -82,7 +82,7 @@
 
         // Media query to handle window resize
         const mediaQuery = window.matchMedia('(min-width: 768px)');
-        
+
         function handleWindowResize(e) {
             if (e.matches) {
                 // Window is now 768px or wider
@@ -145,7 +145,7 @@
             </div>
         </div>
     </section>
-    
+
     <section id="research" class="bg-gray-50 py-16">
         <div class="max-w-6xl mx-auto px-4">
             <h2 class="text-3xl font-bold text-[#011F5B] mb-8">Research Focus</h2>
@@ -216,6 +216,25 @@
                 <div class="news-item bg-white rounded-lg shadow-sm p-4 hidden">
                     <div class="flex justify-between items-start mb-1">
                         <h4 class="text-lg font-semibold text-[#011F5B]">
+                            <a href="https://rdcu.be/egHer"
+                                class="news-link group flex items-center gap-1 hover:text-blue-700"
+                                target="_blank"
+                                rel="noopener noreferrer">
+                                Nature Genetics Publication
+                                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXNxdWFyZS1hcnJvdy1vdXQtdXAtcmlnaHQiPjxwYXRoIGQ9Ik0yMSAxM3Y2YTIgMiAwIDAgMS0yIDJINWEyIDIgMCAwIDEtMi0yVjVhMiAyIDAgMCAxIDItMmg2Ii8+PHBhdGggZD0ibTIxIDMtOSA5Ii8+PHBhdGggZD0iTTE1IDNoNnY2Ii8+PC9zdmc+"
+                                    class="external-link-icon w-4 h-4 inline-block"
+                                    alt="external link">
+                            </a>
+                        </h4>
+                        <p class="text-sm text-gray-500 whitespace-nowrap ml-2">November 25, 2024</p>
+                    </div>
+                    <p class="text-gray-600 text-sm">Congratulations to David Lee on his publication in Nature Genetics titled "Common-variant and rare-variant genetic architecture of heart failure across the allele-frequency spectrum"!</p>
+                </div>
+
+                <!-- Original news items -->
+                <div class="news-item bg-white rounded-lg shadow-sm p-4 hidden">
+                    <div class="flex justify-between items-start mb-1">
+                        <h4 class="text-lg font-semibold text-[#011F5B]">
                             <a href="https://x.com/MGLevin/status/1857154486873293057"
                                 class="news-link group flex items-center gap-1 hover:text-blue-700"
                                 target="_blank"
@@ -263,11 +282,11 @@
                 </div>
             </div>
             <div class="text-center mt-6 space-x-4" id="button-container">
-                <button id="show-more-btn" 
+                <button id="show-more-btn"
                         class="bg-[#011F5B] text-white px-6 py-2 rounded-md hover:bg-blue-900 transition-colors">
                     Show More
                 </button>
-                <button id="show-less-btn" 
+                <button id="show-less-btn"
                         class="hidden bg-[#011F5B] text-white px-6 py-2 rounded-md hover:bg-blue-900 transition-colors">
                     Show Fewer
                 </button>
@@ -283,7 +302,7 @@
         const showLessBtn = document.getElementById('show-less-btn');
         const newsItems = document.querySelectorAll('.news-item');
         const itemsToShow = 5; // Show first 5 items
-        
+
         // Function to update visibility
         function updateVisibility(showAll = false) {
             let hiddenCount = 0;
@@ -295,7 +314,7 @@
                     hiddenCount++;
                 }
             });
-            
+
             // Toggle button visibility
             if (showAll) {
                 showMoreBtn.classList.add('hidden');
@@ -305,15 +324,15 @@
                 showLessBtn.classList.add('hidden');
             }
         }
-        
+
         // Initial visibility setup
         updateVisibility();
-        
+
         // Show More button click handler
         showMoreBtn.addEventListener('click', function() {
             updateVisibility(true);
         });
-        
+
         // Show Less button click handler
         showLessBtn.addEventListener('click', function() {
             updateVisibility(false);
