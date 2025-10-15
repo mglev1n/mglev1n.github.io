@@ -9,15 +9,12 @@ format:
       - text: |
           <meta name="description" content="Cardiovascular genetics research at the University of Pennsylvania">
 validate-yaml: false
-bibliography: 
-  manuscripts: "manuscripts.bib"
+bibliography: manuscripts.bib
 csl: "templates/american-medical-association-no-et-al-v2.csl"
 nocite: |
   @*
 filters:
-  # - "lua/recent-publications.lua"
-  - "lua/multiple-bibliographies2.lua"
-  - "lua/author-highlighting.lua"
+  - lua/recent-publications.lua
 params:
   n_recent: 5
   zotero_user_id: !expr Sys.getenv("ZOTERO_USER_ID", "")
@@ -274,7 +271,7 @@ We work with the [Million Veteran Program](https://www.mvp.va.gov/pwa/), [Penn M
 
 ## Recent Publications
 
-::: {#refs-manuscripts}
+::: {#refs-recent}
 :::
 
 [View all publications →](publications.html)
