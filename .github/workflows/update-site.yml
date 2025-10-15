@@ -1,0 +1,154 @@
+name: Update Website (Quarto)
+
+on:
+  # Run nightly at 2 AM UTC
+  schedule:
+    - cron: '0 2 * * *'
+
+  # Allow manual triggering
+  workflow_dispatch:
+
+  # Run on pushes to main branch
+  push:
+    branches: [ main, master ]
+
+jobs:
+  update-site:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      ZOTERO_USER_ID: ${{ secrets.ZOTERO_USER_ID }}
+      ZOTERO_API_KEY: ${{ secrets.ZOTERO_API_KEY }}
+      ZOTERO_COLLECTION_KEY: ${{ secrets.ZOTERO_COLLECTION_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: release
+          tinytex: false
+
+      - name: Verify Quarto installation
+        run: |
+          echo "Quarto version:"
+          quarto --version
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.4.0'
+          use-public-rspm: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
+
+      - name: Cache R packages
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.R_LIBS_USER }}
+          key: ${{ runner.os }}-r-quarto-${{ hashFiles('**/renv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-r-quarto-
+
+      - name: Install renv
+        run: |
+          if (!requireNamespace("renv", quietly = TRUE)) {
+            install.packages("renv", repos = "https://cloud.r-project.org/")
+          }
+        shell: Rscript {0}
+
+      - name: Check renv.lock exists
+        run: |
+          if [ ! -f "renv.lock" ]; then
+            echo "❌ renv.lock not found!"
+            echo "💡 Make sure renv.lock is committed to the repository"
+            exit 1
+          fi
+          echo "✅ renv.lock found"
+          echo "📋 renv.lock info:"
+          head -20 renv.lock
+
+      - name: Restore renv environment
+        run: |
+          cat("🔄 Restoring renv environment...\n")
+
+          # Try to restore from renv.lock
+          tryCatch({
+            renv::restore(prompt = FALSE)
+            cat("✅ renv restore completed\n")
+          }, error = function(e) {
+            cat("⚠️ renv restore failed:", e$message, "\n")
+            cat("🔧 Attempting to install packages manually...\n")
+
+            # Install critical packages manually if restore fails
+            critical_packages <- c("tidyverse", "glue", "googlesheets4", "zoterro", "svglite", "lubridate", "rmarkdown", "knitr")
+            for (pkg in critical_packages) {
+              if (!requireNamespace(pkg, quietly = TRUE)) {
+                cat("📥 Installing", pkg, "...\n")
+                install.packages(pkg, repos = "https://cloud.r-project.org/")
+              }
+            }
+          })
+
+          # Check critical packages
+          cat("📦 Verifying critical packages...\n")
+          critical_packages <- c("tidyverse", "glue", "googlesheets4", "zoterro", "svglite")
+          missing_packages <- c()
+          for (pkg in critical_packages) {
+            if (requireNamespace(pkg, quietly = TRUE)) {
+              cat("✅", pkg, "- available\n")
+            } else {
+              cat("❌", pkg, "- MISSING\n")
+              missing_packages <- c(missing_packages, pkg)
+            }
+          }
+
+          # Install any missing critical packages
+          if (length(missing_packages) > 0) {
+            cat("🔧 Installing missing packages...\n")
+            for (pkg in missing_packages) {
+              cat("📥 Installing", pkg, "...\n")
+              install.packages(pkg, repos = "https://cloud.r-project.org/")
+            }
+          }
+
+          cat("✅ All critical packages verified\n")
+        shell: Rscript {0}
+        env:
+          RENV_PATHS_ROOT: ~/.local/share/renv
+
+      - name: Render main page
+        run: |
+          quarto render index.qmd
+
+      - name: Render publications page
+        run: |
+          quarto render publications.qmd
+
+      - name: Commit and push if changed
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+          # Add generated files
+          git add index.html publications.html manuscripts.bib
+
+          # Check if there are changes
+          if git diff --staged --quiet; then
+            echo "✅ No changes to commit"
+          else
+            git commit -m "🤖 Auto-update website ($(date '+%Y-%m-%d %H:%M:%S UTC'))"
+            git push
+            echo "✅ Website updated"
+          fi

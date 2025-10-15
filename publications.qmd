@@ -1,0 +1,44 @@
+---
+title: "Publications"
+format:
+  html:
+    toc: false
+    theme: none
+    css: styles.css
+    include-in-header:
+      - text: |
+          <meta name="description" content="Complete list of publications by Michael G. Levin, MD">
+bibliography: manuscripts.bib
+csl: "templates/american-medical-association-no-et-al-v2.csl"
+nocite: |
+  @*
+filters:
+  - lua/publications-by-year.lua
+  - lua/author-highlighting.lua
+---
+
+::: {.back-link}
+[← Back to main page](index.html)
+:::
+
+::: {.content}
+
+```{r count-pubs, echo=FALSE, results='asis'}
+# Count publications in bib file
+if (file.exists("manuscripts.bib")) {
+  bib_content <- readLines("manuscripts.bib", warn = FALSE)
+  n_entries <- sum(grepl("^@", bib_content))
+  cat(paste0("*Complete list of ", n_entries, " publications*\n\n"))
+}
+```
+
+::: {#refs-by-year}
+:::
+
+::: {.footer}
+[← Back to main page](index.html)
+
+*Last updated: `{r} format(Sys.Date(), "%B %d, %Y")`*
+:::
+
+:::

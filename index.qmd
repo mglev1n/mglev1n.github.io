@@ -1,0 +1,284 @@
+---
+title: "Levin Lab"
+format:
+  html:
+    toc: false
+    theme: none
+    css: styles.css
+    include-in-header:
+      - text: |
+          <meta name="description" content="Cardiovascular genetics research at the University of Pennsylvania">
+bibliography: manuscripts.bib
+csl: "templates/american-medical-association-no-et-al-v2.csl"
+nocite: |
+  @*
+filters:
+  - lua/recent-publications.lua
+params:
+  n_recent: 5
+  zotero_user_id: !expr Sys.getenv("ZOTERO_USER_ID", "")
+  zotero_api_key: !expr Sys.getenv("ZOTERO_API_KEY", "")
+  zotero_collection_key: !expr Sys.getenv("ZOTERO_COLLECTION_KEY", "")
+---
+
+```{r setup, include = FALSE}
+library(tidyverse)
+library(glue)
+library(googlesheets4)
+library(zoterro)
+
+# Validate Zotero configuration
+validate_zotero_config <- function() {
+  user_id <- params$zotero_user_id
+  api_key <- params$zotero_api_key
+  collection_key <- params$zotero_collection_key
+  
+  if (is.na(user_id) || user_id == "") {
+    stop("ZOTERO_USER_ID environment variable is not set or empty")
+  }
+  
+  if (is.na(api_key) || api_key == "") {
+    stop("ZOTERO_API_KEY environment variable is not set or empty")
+  }
+  
+  if (is.na(collection_key) || collection_key == "") {
+    stop("ZOTERO_COLLECTION_KEY environment variable is not set or empty")
+  }
+  
+  cat("✅ Zotero configuration validated\n")
+  cat("   User ID: ***", substr(user_id, nchar(user_id)-3, nchar(user_id)), "\n")
+  cat("   API Key: ***", substr(api_key, nchar(api_key)-3, nchar(api_key)), "\n")
+  cat("   Collection: ***", substr(collection_key, nchar(collection_key)-3, nchar(collection_key)), "\n")
+  
+  return(list(
+    user_id = user_id,
+    api_key = api_key,
+    collection_key = collection_key
+  ))
+}
+
+# Validate configuration at startup
+zotero_config <- validate_zotero_config()
+
+# Define temporary file paths
+temp_files <- c("manuscripts.bib")
+
+# Function to ensure directory exists
+ensure_dir <- function(path) {
+  if (!dir.exists(dirname(path))) {
+    dir.create(dirname(path), recursive = TRUE)
+  }
+}
+
+# Function to cleanup temporary files
+cleanup_temp_files <- function() {
+  for (file in temp_files) {
+    if (file.exists(file)) {
+      file.remove(file)
+      cat("Cleaned up:", file, "\n")
+    }
+  }
+}
+
+# Function to fetch and save bibliography from Zotero
+fetch_zotero_bibliography <- function(collection_key, user_id, api_key, tags, filename) {
+  tryCatch({
+    cat("Fetching", filename, "from Zotero...\n")
+    
+    # Build query based on tags
+    query_list <- list(
+      itemType = "-attachment",
+      format = "bibtex"
+    )
+    
+    # Add tag filter if provided
+    if (!is.null(tags) && tags != "") {
+      query_list$tag <- tags
+    }
+    
+    # Fetch items from Zotero
+    bib_data <- zoterro::items(
+      collection_key = collection_key,
+      user = zoterro::zotero_user_id(user_id),
+      api_key = api_key,
+      as_tibble = FALSE,
+      query = query_list
+    )
+    
+    # Ensure directory exists
+    ensure_dir(filename)
+    
+    # Write to file
+    writeLines(rawToChar(bib_data), filename)
+    cat("Successfully saved", filename, "\n")
+    
+    return(TRUE)
+  }, error = function(e) {
+    cat("Error fetching", filename, ":", e$message, "\n")
+    return(FALSE)
+  })
+}
+
+# Pre-render: Fetch all bibliographies from Zotero
+cat("=== Fetching bibliographies from Zotero ===\n")
+
+# Use validated configuration
+user_id <- zotero_config$user_id
+api_key <- zotero_config$api_key
+collection_key <- zotero_config$collection_key
+
+# Define bibliography configurations
+bib_configs <- list(
+  manuscripts = list(
+    tags = "-Abstract || Preprint-final-published",
+    file = "manuscripts.bib"
+  )
+)
+
+# Fetch each bibliography
+bib_success <- map_lgl(bib_configs, function(config) {
+  fetch_zotero_bibliography(
+    collection_key = collection_key,
+    user_id = user_id,
+    api_key = api_key,
+    tags = config$tags,
+    filename = config$file
+  )
+})
+
+# Check if all bibliographies were fetched successfully
+if (!all(bib_success)) {
+  stop("Failed to fetch one or more bibliographies from Zotero")
+}
+
+cat("=== All bibliographies fetched successfully ===\n")
+
+```
+
+
+```{r, include = FALSE}
+# Simple function to clean bibtex note fields
+clean_bibtex_authorship_notes <- function(bib_file_path) {
+  
+  # Step 1: Read the bibtex file
+  bib_content <- readLines(bib_file_path, warn = FALSE)
+  
+  cleaned_lines <- c()
+  i <- 1
+  
+  while (i <= length(bib_content)) {
+    line <- bib_content[i]
+    
+    # Step 2: Check if line starts with "note = {"
+    if (grepl("^\\s*note\\s*=\\s*\\{", line)) {
+      # cat("DEBUG: Found note field at line", i, "\n")
+      
+      # Step 3: Extract everything between opening and closing braces
+      note_text <- ""
+      
+      # Get the part after the opening brace from the first line
+      first_part <- sub("^\\s*note\\s*=\\s*\\{(.*)$", "\\1", line)
+      note_text <- first_part
+      
+      # Continue reading lines until we find the closing brace
+      while (!grepl("\\}", note_text) && i < length(bib_content)) {
+        i <- i + 1
+        note_text <- paste(note_text, bib_content[i], sep = "\n")
+      }
+      
+      # Remove the closing brace and comma
+      note_text <- sub("\\}\\s*,?\\s*$", "", note_text)
+      
+      # cat("DEBUG: Extracted note text:", note_text, "\n")
+      
+      # Step 4: Split by newline
+      note_lines <- strsplit(note_text, "\n", fixed = TRUE)[[1]]
+      
+      # Step 5: Keep lines starting with "Authorship Note:"
+      authorship_lines <- note_lines[grepl("^\\s*Authorship Note:", note_lines)]
+      
+      # cat("DEBUG: Found", length(authorship_lines), "authorship lines\n")
+      
+      # Step 6: If we have authorship lines, insert them back
+      if (length(authorship_lines) > 0) {
+        # Clean up the authorship line (remove "Authorship Note:" prefix)
+        # authorship_content <- sub("^\\s*Authorship Note:\\s*", "", authorship_lines[1])
+        authorship_content <- trimws(authorship_lines[1])
+        
+        # cat("DEBUG: Final authorship content:", authorship_content, "\n")
+        
+        # Insert the cleaned note field
+        cleaned_lines <- c(cleaned_lines, paste0("\tnote = {", authorship_content, "},"))
+      }
+      # If no authorship lines found, skip the note field entirely
+      
+    } else {
+      # Not a note field, keep the line as-is
+      cleaned_lines <- c(cleaned_lines, line)
+    }
+    
+    i <- i + 1
+  }
+  
+  return(cleaned_lines)
+}
+
+# Function to process and save cleaned bibtex file
+process_bibtex_file <- function(input_file, output_file = NULL) {
+  if (is.null(output_file)) {
+    output_file <- input_file  # Overwrite the original file
+  }
+  
+  cat("Cleaning authorship notes in:", input_file, "\n")
+  
+  cleaned_content <- clean_bibtex_authorship_notes(input_file)
+  
+  # Write the cleaned content back to file
+  writeLines(cleaned_content, output_file)
+  
+  cat("Cleaned bibtex saved to:", output_file, "\n")
+  
+  return(output_file)
+}
+
+# Example usage function to clean all bibliography files
+clean_all_bibliography_files <- function() {
+  # List of your bibliography files
+  bib_files <- c("manuscripts.bib")
+  
+  for (bib_file in bib_files) {
+    if (file.exists(bib_file)) {
+      process_bibtex_file(bib_file)
+    } else {
+      cat("Warning: File not found:", bib_file, "\n")
+    }
+  }
+}
+
+clean_all_bibliography_files()
+```
+
+::: {.content}
+
+**Cardiovascular genetics research at the University of Pennsylvania.**
+
+We study the genetic basis of cardiovascular disease using large-scale biobanks and electronic health records.
+
+Our research focuses on identifying genetic variants that influence heart disease risk and translating these findings into clinical applications for personalized prevention and treatment.
+
+We work with the [Million Veteran Program](https://www.mvp.va.gov/pwa/), [Penn Medicine Biobank](https://pmbb.med.upenn.edu/), and other population-scale cohorts to advance our understanding of cardiovascular genetics.
+
+## Recent Publications
+
+<!-- ::: {#refs-recent} -->
+<!-- ::: -->
+
+[View all publications →](publications.html)
+
+<br>[Contact](mailto:Michael.Levin@pennmedicine.upenn.edu) | [GitHub](https://github.com/mglev1n)
+
+---
+
+*Last updated: `{r} format(Sys.Date(), "%B %d, %Y")`*
+
+:::
