@@ -136,7 +136,7 @@ jobs:
             cat("🔧 Attempting to install packages manually...\n")
 
             # Install critical packages manually if restore fails
-            critical_packages <- c("tidyverse", "glue", "googlesheets4", "zoterro", "svglite", "lubridate", "rmarkdown", "knitr")
+            critical_packages <- c("tidyverse", "glue", "googlesheets4", "zoterro")
             for (pkg in critical_packages) {
               if (!requireNamespace(pkg, quietly = TRUE)) {
                 cat("📥 Installing", pkg, "...\n")
@@ -147,7 +147,7 @@ jobs:
 
           # Check critical packages
           cat("📦 Verifying critical packages...\n")
-          critical_packages <- c("tidyverse", "glue", "googlesheets4", "zoterro", "svglite", "rmarkdown", "knitr")
+          critical_packages <- c("tidyverse", "glue", "googlesheets4", "zoterro")
           missing_packages <- c()
           for (pkg in critical_packages) {
             if (requireNamespace(pkg, quietly = TRUE)) {
