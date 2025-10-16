@@ -385,9 +385,9 @@ create_recent_bibliography("manuscripts.bib", "manuscripts-recent.bib", n_recent
 
 We study the genetic basis of cardiovascular disease using large-scale biobanks and electronic health records.
 
-Our research focuses on characterizing how common and rare germline genetic variation shapes susceptibility to cardiovascular risk. We translate these findings into clinical applications for personalized prevention and treatment.
+Our research characterizes how common and rare genetic variation shapes susceptibility to cardiovascular diseases. We use these discoveries to identify therapeutic targets, develop genetic risk prediction tools, and conduct mechanistic clinical studies to validate findings in humans.
 
-We work with the [Million Veteran Program](https://www.mvp.va.gov/pwa/), [Penn Medicine Biobank](https://pmbb.med.upenn.edu/), and other population-scale cohorts using a range of computational, genetic, epidemiologic, and clinical/translational methods.
+We work with the [Million Veteran Program](https://www.mvp.va.gov/pwa/), [Penn Medicine Biobank](https://pmbb.med.upenn.edu/), and other population-scale cohorts using computational genetics, epidemiologic methods, and clinical/translational approaches.
 
 ## Recent Publications
 
