@@ -3,17 +3,19 @@ title: "Levin Lab"
 format:
   html:
     toc: false
+    anchor-sections: false
+    embed-resources: true
     theme: none
     css: styles.css
     include-in-header:
       - text: |
           <meta name="description" content="Cardiovascular genetics research at the University of Pennsylvania">
 validate-yaml: false
-bibliography: manuscripts.bib
+bibliography: manuscripts-recent.bib
 csl: "templates/american-medical-association-no-et-al-v2.csl"
 nocite: '@*'
-filters:
-  - lua/recent-publications.lua
+# filters:
+#   - lua/recent-publications.lua
 params:
   n_recent: 5
   zotero_user_id: !expr Sys.getenv("ZOTERO_USER_ID", "")
@@ -258,19 +260,138 @@ clean_all_bibliography_files <- function() {
 clean_all_bibliography_files()
 ```
 
+```{r create-recent-bib, include = FALSE}
+# Create a filtered bibliography with only the N most recent publications
+create_recent_bibliography <- function(input_bib, output_bib, n_recent = 5) {
+  cat("Creating recent publications bibliography...\n")
+  
+  # Month name to number mapping
+  month_map <- c(
+    jan = 1, january = 1,
+    feb = 2, february = 2,
+    mar = 3, march = 3,
+    apr = 4, april = 4,
+    may = 5,
+    jun = 6, june = 6,
+    jul = 7, july = 7,
+    aug = 8, august = 8,
+    sep = 9, september = 9,
+    oct = 10, october = 10,
+    nov = 11, november = 11,
+    dec = 12, december = 12
+  )
+  
+  # Read the bib file
+  bib_content <- readLines(input_bib, warn = FALSE)
+  
+  # Parse entries
+  entries <- list()
+  current_entry <- NULL
+  current_lines <- c()
+  current_year <- NULL
+  current_month <- NULL
+  
+  for (line in bib_content) {
+    # Check for entry start
+    if (grepl("^@", line)) {
+      # Save previous entry if exists
+      if (!is.null(current_entry) && !is.null(current_year)) {
+        entries[[length(entries) + 1]] <- list(
+          key = current_entry,
+          year = current_year,
+          month = ifelse(is.null(current_month), 0, current_month),
+          lines = current_lines
+        )
+      }
+      # Start new entry
+      key_match <- regmatches(line, regexec("@\\w+\\{([^,]+)", line))[[1]]
+      if (length(key_match) > 1) {
+        current_entry <- key_match[2]
+        current_lines <- c(line)
+        current_year <- NULL
+        current_month <- NULL
+      }
+    } else if (!is.null(current_entry)) {
+      # Add line to current entry
+      current_lines <- c(current_lines, line)
+      
+      # Check for year
+      if (is.null(current_year)) {
+        year_match <- regmatches(line, regexec("year\\s*=\\s*[{]?(\\d{4})[}]?", line))[[1]]
+        if (length(year_match) > 1) {
+          current_year <- as.numeric(year_match[2])
+        }
+      }
+      
+      # Check for month
+      if (is.null(current_month)) {
+        month_match <- regmatches(line, regexec("month\\s*=\\s*[{]?([^,}]+)[}]?", line))[[1]]
+        if (length(month_match) > 1) {
+          month_str <- tolower(trimws(month_match[2]))
+          # Try to convert month string to number
+          if (month_str %in% names(month_map)) {
+            current_month <- month_map[[month_str]]
+          } else if (grepl("^\\d+$", month_str)) {
+            current_month <- as.numeric(month_str)
+          }
+        }
+      }
+    }
+  }
+  
+  # Don't forget the last entry
+  if (!is.null(current_entry) && !is.null(current_year)) {
+    entries[[length(entries) + 1]] <- list(
+      key = current_entry,
+      year = current_year,
+      month = ifelse(is.null(current_month), 0, current_month),
+      lines = current_lines
+    )
+  }
+  
+  cat("  Found", length(entries), "total entries\n")
+  
+  # Sort by year (descending), then by month (descending)
+  entries <- entries[order(
+    sapply(entries, function(x) x$year),
+    sapply(entries, function(x) x$month),
+    decreasing = TRUE
+  )]
+  
+  # Take only the N most recent
+  recent_entries <- head(entries, n_recent)
+  
+  cat("  Keeping", length(recent_entries), "most recent entries:\n")
+  for (entry in recent_entries) {
+    month_name <- ifelse(entry$month > 0, 
+                         names(month_map)[match(entry$month, month_map)][1],
+                         "unknown")
+    cat("    -", entry$key, "(", month_name, entry$year, ")\n")
+  }
+  
+  # Write the filtered bibliography
+  all_lines <- unlist(lapply(recent_entries, function(x) x$lines))
+  writeLines(all_lines, output_bib)
+  
+  cat("✅ Created", output_bib, "\n")
+}
+
+# Create the recent publications bib file
+create_recent_bibliography("manuscripts.bib", "manuscripts-recent.bib", n_recent = params$n_recent)
+```
 ::: {.content}
 
-**Cardiovascular genetics research at the University of Pennsylvania.**
+## Cardiovascular genetics research at the University of Pennsylvania
 
 We study the genetic basis of cardiovascular disease using large-scale biobanks and electronic health records.
 
-Our research focuses on identifying genetic variants that influence heart disease risk and translating these findings into clinical applications for personalized prevention and treatment.
+Our research focuses on characterizing how common and rare germline genetic variation shapes susceptibility to cardiovascular risk. We translate these findings into clinical applications for personalized prevention and treatment.
 
-We work with the [Million Veteran Program](https://www.mvp.va.gov/pwa/), [Penn Medicine Biobank](https://pmbb.med.upenn.edu/), and other population-scale cohorts to advance our understanding of cardiovascular genetics.
+We work with the [Million Veteran Program](https://www.mvp.va.gov/pwa/), [Penn Medicine Biobank](https://pmbb.med.upenn.edu/), and other population-scale cohorts using a range of computational, genetic, epidemiologic, and clinical/translational methods.
 
 ## Recent Publications
 
-::: {#refs-recent}
+::: {#refs style="font-size: 0.9em; text-align: justify; padding-left: 30px; padding-right: 30px;"}
 :::
 
 [View all publications →](publications.html)

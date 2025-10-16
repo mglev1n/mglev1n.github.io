@@ -121,7 +121,7 @@
       </group>
     </layout>
   </citation>
-  <bibliography hanging-indent="false" et-al-min="99" et-al-use-first="98">
+  <bibliography hanging-indent="true" et-al-min="99" et-al-use-first="98">
     <sort>
       <key variable="issued" sort="descending"/>
       <key macro="author" names-min="2" names-use-first="1"/>

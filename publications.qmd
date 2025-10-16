@@ -3,18 +3,18 @@ title: "Publications"
 format:
   html:
     toc: false
+    anchor-sections: false
+    embed-resources: true
     theme: none
     css: styles.css
     include-in-header:
       - text: |
           <meta name="description" content="Complete list of publications by Michael G. Levin, MD">
 csl: "templates/american-medical-association-no-et-al-v2.csl"
-validate-yaml: false
-bibliography:
-  manuscripts: "manuscripts.bib"
+citeproc: false
+bibliography: manuscripts.bib
 filters:
-  - "lua/multiple-bibliographies2.lua"
-  # - "lua/author-highlighting.lua"
+  - lua/bibliography-processor.lua
 nocite: '@*'
 ---
 
@@ -22,7 +22,7 @@ nocite: '@*'
 [← Back to main page](index.html)
 :::
 
-::: {.content}
+::: {.content style="text-align: justify"}
 
 ```{r count-pubs, echo=FALSE, results='asis'}
 # Count publications in bib file
@@ -33,13 +33,13 @@ nocite: '@*'
 # }
 ```
 
-::: {#refs-manuscripts}
+::: {#refs}
 :::
 
 ::: {.footer}
 [← Back to main page](index.html)
 
-*Last updated: `{r} format(Sys.Date(), "%B %d, %Y")`*
+*Last updated: `r format(Sys.Date(), "%B %d, %Y")`*
 :::
 
 :::
