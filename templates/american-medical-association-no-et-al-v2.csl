@@ -272,7 +272,7 @@
         </else>
       </choose>
       <text prefix=" " macro="access"/>
-      <text variable="note" font-style="italic" font-weight="bold" prefix=". " suffix="." />
+      <text variable="note" font-style="italic" font-weight="bold" prefix=". "/>
     </layout>
   </bibliography>
 </style>

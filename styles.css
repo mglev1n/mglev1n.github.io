@@ -14,6 +14,7 @@ body {
   max-width: 800px;
   margin: 0 auto;
   font-size: 16px;
+  text-align: justi;
 }
 
 /* Main content wrapper */
@@ -132,4 +133,14 @@ h3 + div {
 /* Publications page specific - slightly wider */
 body.publications-page {
   max-width: 900px;
+}
+
+.authorship-note {
+  color: #888;
+  font-weight: normal;
+  font-style: italic;
+}
+
+.authorship-note-index {
+  display: none;
 }

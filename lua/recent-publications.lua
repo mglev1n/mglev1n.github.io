@@ -175,6 +175,47 @@ local function qualifies_for_inclusion(entry_div)
   return first or senior or equal, first, senior, equal
 end
 
+-- Helper function to wrap the Authorship Note (Emph) and its immediate trailing period (Str)
+local function wrap_authorship_note(inlines)
+  local new_inlines = pandoc.List:new()
+  local i = 1
+
+  while i <= #inlines do
+    local elem = inlines[i]
+
+    -- Check if the current element is the Authorship Note Emph
+    if elem.t == "Emph" and pandoc.utils.stringify(elem):match("Authorship Note:") then
+
+      -- Start the content for the new span with the Emph content
+      local span_content = pandoc.List:new(elem.content)
+
+      -- Look at the next element (i + 1)
+      local next_elem = inlines[i + 1]
+
+      -- Check if the next element exists and is a string containing just a period (and optional whitespace)
+      if next_elem and next_elem.t == "Str" and next_elem.text:match("^%.%s*$") then
+
+        -- Append the period text to the span content
+        span_content:append(next_elem)
+
+        -- Consume the period element by advancing the index
+        i = i + 1
+      end
+
+      -- Replace the current Emph element (and the trailing period, if found) with the new Span
+      new_inlines:append(pandoc.Span(span_content, {class = "authorship-note-index"}))
+
+    else
+      -- If it's not the target Emph, just keep the element
+      new_inlines:append(elem)
+    end
+
+    i = i + 1
+  end
+
+  return new_inlines
+end
+
 -- Main processing function
 function Pandoc(doc)
   io.stderr:write("\nProcessing document...\n")
@@ -256,7 +297,15 @@ function Pandoc(doc)
           end
         end
         return elem
-      end
+      end,
+      Emph = function(elem)
+        local text = pandoc.utils.stringify(elem)
+        -- Check if this is an authorship note
+        if text:match("Authorship Note:") then
+          return pandoc.Span(elem.content, {class = "authorship-note-index"})
+        end
+        return elem
+      end,
     })
 
     table.insert(new_content, entry)

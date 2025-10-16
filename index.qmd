@@ -2,14 +2,12 @@
 title: "Levin Lab"
 format:
   html:
-    toc: false
-    anchor-sections: false
-    embed-resources: true
-    theme: none
+    minimal: true
     css: styles.css
     include-in-header:
       - text: |
-          <meta name="description" content="Cardiovascular genetics research at the University of Pennsylvania">
+          <meta name="description" content="Cardiovascular genetics research at the University of Pennsylvania" />
+          <meta name="twitter:card" content="summary" />
 validate-yaml: false
 bibliography: manuscripts.bib
 csl: "templates/american-medical-association-no-et-al-v2.csl"
