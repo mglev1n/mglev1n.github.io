@@ -10,6 +10,13 @@ format:
     include-in-header:
       - text: |
           <meta name="description" content="Complete list of publications by Michael G. Levin, MD">
+          <style>
+          .authorship-note {
+            color: #888;
+            font-weight: normal;
+            font-style: italic;
+          }
+          </style>
 csl: "templates/american-medical-association-no-et-al-v2.csl"
 citeproc: false
 bibliography: manuscripts.bib

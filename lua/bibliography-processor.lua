@@ -172,7 +172,7 @@ function Pandoc(doc)
         year_count = year_count + 1
       end
 
-      -- Highlight Levin - walk through content with context tracking
+      -- Highlight Levin and style authorship notes - walk through content with context tracking
       local entry_highlights = 0
       block.content = block.content:walk({
         Str = function(elem)
@@ -181,6 +181,15 @@ function Pandoc(doc)
             entry_highlights = entry_highlights + 1
           end
           return result
+        end,
+        -- Wrap authorship notes in a span for styling
+        Emph = function(elem)
+          local text = pandoc.utils.stringify(elem)
+          -- Check if this is an authorship note
+          if text:match("Authorship Note:") then
+            return pandoc.Span(elem.content, {class = "authorship-note"})
+          end
+          return elem
         end,
         -- Reset context at paragraph boundaries
         Para = function(para)
