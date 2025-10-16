@@ -67,8 +67,12 @@ a:hover {
 }
 
 /* References styling */
-#refs, #refs-recent, #refs-by-year {
+#refs, #refs-recent, #refs-by-year, #references {
   margin-top: 0;
+  padding-left: 30px;
+  padding-right: 30px;
+  text-align: justify;
+  font-size: 0.9em;
 }
 
 .references {
@@ -111,15 +115,15 @@ h3 + div {
     padding: 20px 15px;
     font-size: 15px;
   }
-  
+
   h1 {
     font-size: 28px;
   }
-  
+
   h2 {
     font-size: 18px;
   }
-  
+
   h3 {
     font-size: 20px;
   }
