@@ -33,6 +33,7 @@ jobs:
       ZOTERO_USER_ID: ${{ secrets.ZOTERO_USER_ID }}
       ZOTERO_API_KEY: ${{ secrets.ZOTERO_API_KEY }}
       ZOTERO_COLLECTION_KEY: ${{ secrets.ZOTERO_COLLECTION_KEY }}
+      RENV_PATHS_ROOT: ~/.local/share/renv
 
     steps:
       - name: Checkout repository
