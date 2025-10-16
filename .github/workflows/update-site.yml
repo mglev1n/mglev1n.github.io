@@ -1,4 +1,4 @@
-name: Update Website (Quarto)
+name: Build and deploy website
 
 on:
   # Run nightly at 2 AM UTC
@@ -38,62 +38,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Cache system dependencies
-      - name: Cache apt packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/update-site.yml') }}
-          restore-keys: |
-            ${{ runner.os }}-apt-
-
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libcurl4-openssl-dev \
-            libssl-dev \
-            libxml2-dev \
-            libfontconfig1-dev
-
-      # Cache Pandoc installation
-      - name: Cache Pandoc
-        id: cache-pandoc
-        uses: actions/cache@v4
-        with:
-          path: /usr/local/bin/pandoc
-          key: ${{ runner.os }}-pandoc-3.1.11
-
-      # Install pandoc using r-lib action
+      # Install pandoc (fast, no need to cache)
       - name: Setup Pandoc
-        if: steps.cache-pandoc.outputs.cache-hit != 'true'
         uses: r-lib/actions/setup-pandoc@v2
         with:
           pandoc-version: '3.1.11'
 
-      # Cache Quarto installation
-      - name: Cache Quarto
-        id: cache-quarto
-        uses: actions/cache@v4
-        with:
-          path: |
-            /usr/local/bin/quarto
-            /opt/quarto
-          key: ${{ runner.os }}-quarto-release
-
       - name: Set up Quarto
-        if: steps.cache-quarto.outputs.cache-hit != 'true'
         uses: quarto-dev/quarto-actions/setup@v2
         with:
           version: release
           tinytex: true
 
-      # Cache TinyTeX
+      # Cache TinyTeX - using a simpler key that doesn't change with every .qmd edit
+      # Only invalidate when we explicitly want to rebuild LaTeX packages
       - name: Cache TinyTeX
         uses: actions/cache@v4
         with:
           path: ~/.TinyTeX
-          key: ${{ runner.os }}-tinytex-${{ hashFiles('**/*.qmd') }}
+          key: ${{ runner.os }}-tinytex-2024
           restore-keys: |
             ${{ runner.os }}-tinytex-
 
@@ -112,9 +75,10 @@ jobs:
           r-version: '4.4.0'
           use-public-rspm: true
 
-      # Cache R packages
-      - name: Cache R packages
-        uses: actions/cache@v4
+      # Restore R packages cache first (read-only for this step)
+      - name: Restore R packages cache
+        id: cache-renv
+        uses: actions/cache/restore@v4
         with:
           path: |
             ~/.local/share/renv
@@ -122,6 +86,15 @@ jobs:
           key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
           restore-keys: |
             ${{ runner.os }}-renv-
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libcurl4-openssl-dev \
+            libssl-dev \
+            libxml2-dev \
+            libfontconfig1-dev
 
       - name: Install renv
         run: |
@@ -140,6 +113,14 @@ jobs:
           echo "✅ renv.lock found"
           echo "📋 renv.lock info:"
           head -20 renv.lock
+
+      - name: Check cache status
+        run: |
+          if [ "${{ steps.cache-renv.outputs.cache-hit }}" == "true" ]; then
+            echo "✅ R packages cache hit! Using cached packages."
+          else
+            echo "📦 R packages cache miss. Will install packages."
+          fi
 
       - name: Restore renv environment
         run: |
@@ -189,6 +170,16 @@ jobs:
         shell: Rscript {0}
         env:
           RENV_PATHS_ROOT: ~/.local/share/renv
+
+      # Save R packages cache only if it was a miss (avoid unnecessary saves)
+      - name: Save R packages cache
+        if: steps.cache-renv.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.local/share/renv
+            ~/.cache/R/renv
+          key: ${{ steps.cache-renv.outputs.cache-primary-key }}
 
       - name: Verify secrets (without exposing values)
         run: |
