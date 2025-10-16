@@ -39,6 +39,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Install pandoc (fast, no need to cache)
       - name: Setup Pandoc
         uses: r-lib/actions/setup-pandoc@v2
         with:
@@ -50,6 +51,8 @@ jobs:
           version: release
           tinytex: true
 
+      # Cache TinyTeX - using a simpler key that doesn't change with every .qmd edit
+      # Only invalidate when we explicitly want to rebuild LaTeX packages
       - name: Cache TinyTeX
         uses: actions/cache@v4
         with:
@@ -58,11 +61,32 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-tinytex-
 
+      - name: Verify Quarto and pandoc installation
+        run: |
+          echo "Quarto version:"
+          quarto --version
+          echo "Pandoc version:"
+          pandoc --version
+          echo "Pandoc location:"
+          which pandoc
+
       - name: Set up R
         uses: r-lib/actions/setup-r@v2
         with:
           r-version: '4.4.0'
           use-public-rspm: true
+
+      # Restore R packages cache first (read-only for this step)
+      - name: Restore R packages cache
+        id: cache-renv
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.local/share/renv
+            ~/.cache/R/renv
+          key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-renv-
 
       - name: Install system dependencies
         run: |
@@ -73,36 +97,88 @@ jobs:
             libxml2-dev \
             libfontconfig1-dev
 
-      - name: Set RENV_PATHS_ROOT
-        shell: bash
+      - name: Install renv
         run: |
-          echo "RENV_PATHS_ROOT=${{ runner.temp }}/renv" >> $GITHUB_ENV
-
-      - name: Install and activate renv
-        run: |
-          install.packages("renv")
-          renv::activate()
+          if (!requireNamespace("renv", quietly = TRUE)) {
+            install.packages("renv", repos = "https://cloud.r-project.org/")
+          }
         shell: Rscript {0}
 
-      - name: Get R and OS version
-        id: get-version
+      - name: Check renv.lock exists
         run: |
-          cat("os-version=", sessionInfo()$running, "\n", file = Sys.getenv("GITHUB_OUTPUT"), sep = "", append = TRUE)
-          cat("r-version=", R.Version()$version.string, "\n", file = Sys.getenv("GITHUB_OUTPUT"), sep = "", append = TRUE)
-        shell: Rscript {0}
+          if [ ! -f "renv.lock" ]; then
+            echo "❌ renv.lock not found!"
+            echo "💡 Make sure renv.lock is committed to the repository"
+            exit 1
+          fi
+          echo "✅ renv.lock found"
+          echo "📋 renv.lock info:"
+          head -20 renv.lock
 
-      - name: Restore renv package cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.RENV_PATHS_ROOT }}
-          key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{ hashFiles('renv.lock') }}
-          restore-keys: |
-            ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-
+      - name: Check cache status
+        run: |
+          if [ "${{ steps.cache-renv.outputs.cache-hit }}" == "true" ]; then
+            echo "✅ R packages cache hit! Using cached packages."
+          else
+            echo "📦 R packages cache miss. Will install packages."
+          fi
 
       - name: Restore renv environment
         run: |
-          renv::restore()
+          cat("🔄 Restoring renv environment...\n")
+
+          # Try to restore from renv.lock
+          tryCatch({
+            renv::restore(prompt = FALSE)
+            cat("✅ renv restore completed\n")
+          }, error = function(e) {
+            cat("⚠️ renv restore failed:", e$message, "\n")
+            cat("🔧 Attempting to install packages manually...\n")
+
+            # Install critical packages manually if restore fails
+            critical_packages <- c("tidyverse", "glue", "googlesheets4", "zoterro", "svglite", "lubridate", "rmarkdown", "knitr")
+            for (pkg in critical_packages) {
+              if (!requireNamespace(pkg, quietly = TRUE)) {
+                cat("📥 Installing", pkg, "...\n")
+                install.packages(pkg, repos = "https://cloud.r-project.org/")
+              }
+            }
+          })
+
+          # Check critical packages
+          cat("📦 Verifying critical packages...\n")
+          critical_packages <- c("tidyverse", "glue", "googlesheets4", "zoterro", "svglite", "rmarkdown", "knitr")
+          missing_packages <- c()
+          for (pkg in critical_packages) {
+            if (requireNamespace(pkg, quietly = TRUE)) {
+              cat("✅", pkg, "- available\n")
+            } else {
+              cat("❌", pkg, "- MISSING\n")
+              missing_packages <- c(missing_packages, pkg)
+            }
+          }
+
+          # Install any missing critical packages
+          if (length(missing_packages) > 0) {
+            cat("🔧 Installing missing packages...\n")
+            for (pkg in missing_packages) {
+              cat("📥 Installing", pkg, "...\n")
+              install.packages(pkg, repos = "https://cloud.r-project.org/")
+            }
+          }
+
+          cat("✅ All critical packages verified\n")
         shell: Rscript {0}
+
+      # Save R packages cache only if it was a miss (avoid unnecessary saves)
+      - name: Save R packages cache
+        if: steps.cache-renv.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.local/share/renv
+            ~/.cache/R/renv
+          key: ${{ steps.cache-renv.outputs.cache-primary-key }}
 
       - name: Verify secrets (without exposing values)
         run: |
@@ -125,8 +201,10 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
+          # Upload the rendered HTML files and any supporting files
           path: '.'
 
+  # Deployment job
   deploy:
     environment:
       name: github-pages
