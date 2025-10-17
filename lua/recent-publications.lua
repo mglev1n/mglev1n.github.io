@@ -325,7 +325,7 @@ function Pandoc(doc)
         io.stderr:write("DEBUG: Found refs div in block replacement (count=" .. refs_found .. ")\n")
         io.stderr:write("DEBUG: Replacing refs div with " .. #new_content .. " entries\n")
         -- Create a new div with filtered content
-        local filtered_div = pandoc.Div(new_content, {id = "refs", class = "references csl-bib-body hanging-indent"})
+        local filtered_div = pandoc.Div(new_content, {id = "refs-index", class = "references csl-bib-body hanging-indent"})
         table.insert(result, filtered_div)
       elseif block.t == "Div" and block.content then
         -- Recursively process nested divs
