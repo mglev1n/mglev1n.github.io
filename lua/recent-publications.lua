@@ -37,23 +37,36 @@ local function get_refs_div(doc)
   return refs_div
 end
 
--- Extract year from a formatted citation entry
+-- Extract year from a formatted citation entry - multiple patterns for maximum flexibility
 local function extract_year(blocks)
   local text = pandoc.utils.stringify(blocks)
 
-  -- Try multiple patterns
+  -- Try multiple patterns in order of specificity
   local patterns = {
-    "%.%s*(%d%d%d%d);",      -- . 2025;290
-    "%.%s*(%d%d%d%d):",      -- . 2025:347
-    "%((%d%d%d%d)%)",         -- (2025)
-    "%.%s*(%d%d%d%d)%.",     -- . 2025.
-    ",?%s*(%d%d%d%d)%.",     -- , 2025. or 2025.
+    -- Traditional formats with volume/issue
+    "%.%s*(%d%d%d%d);",           -- . 2025;14(23)
+    "%.%s*(%d%d%d%d):",           -- . 2025:347
+
+    -- Online-first / no volume formats
+    "%.%s*(%d%d%d%d)%.:e",        -- . 2025.:e038921 (article ID)
+    "%.%s*(%d%d%d%d)%.%s+doi:",   -- . 2025. doi:
+    "%.%s*(%d%d%d%d)%.%s+http",   -- . 2025. http (URL follows)
+
+    -- General formats
+    "%.%s*(%d%d%d%d)%.",          -- . 2025.
+    ",?%s*(%d%d%d%d)%.",          -- , 2025. or 2025.
+    "%((%d%d%d%d)%)",             -- (2025)
+
+    -- Fallback: any 4-digit number that could be a year
+    -- This will match standalone years in various contexts
+    "[^%d](%d%d%d%d)[^%d]",       -- Any 4 digits not adjacent to other digits
   }
 
   for _, pattern in ipairs(patterns) do
     local year = text:match(pattern)
     if year then
       local y = tonumber(year)
+      -- Sanity check: year should be reasonable
       if y >= 1900 and y <= 2100 then
         return y
       end

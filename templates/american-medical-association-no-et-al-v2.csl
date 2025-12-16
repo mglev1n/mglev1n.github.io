@@ -254,19 +254,17 @@
           <text macro="editor" prefix=" " suffix="."/>
           <group prefix=" " suffix=".">
             <text variable="container-title" font-style="italic" form="short" strip-periods="true" suffix="."/>
-            <group delimiter=";" prefix=" ">
-              <choose>
-                <if variable="issue volume" match="any">
-                  <date variable="issued">
-                    <date-part name="year"/>
-                  </date>
-                </if>
-              </choose>
-              <group>
-                <text variable="volume"/>
-                <text variable="issue" prefix="(" suffix=")"/>
+              <group delimiter=";" prefix=" ">
+                <!-- FIXED: Always show year for journal articles -->
+                <date variable="issued">
+                  <date-part name="year"/>
+                </date>
+                <!-- Show volume/issue if present -->
+                <group>
+                  <text variable="volume"/>
+                  <text variable="issue" prefix="(" suffix=")"/>
+                </group>
               </group>
-            </group>
             <text variable="page" prefix=":"/>
           </group>
         </else>

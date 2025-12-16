@@ -31,17 +31,29 @@ local function citeproc(doc)
   end
 end
 
--- Extract year from entry - multiple patterns
+-- Extract year from entry - multiple patterns for maximum flexibility
 local function extract_year(blocks)
   local text = pandoc.utils.stringify(blocks)
 
-  -- Try multiple patterns
+  -- Try multiple patterns in order of specificity
   local patterns = {
-    "%.%s*(%d%d%d%d);",      -- . 2025;290
-    "%.%s*(%d%d%d%d):",      -- . 2025:347
-    "%((%d%d%d%d)%)",         -- (2025)
-    "%.%s*(%d%d%d%d)%.",     -- . 2025.
-    ",?%s*(%d%d%d%d)%.",     -- , 2025. or 2025.
+    -- Traditional formats with volume/issue
+    "%.%s*(%d%d%d%d);",           -- . 2025;14(23)
+    "%.%s*(%d%d%d%d):",           -- . 2025:347
+
+    -- Online-first / no volume formats
+    "%.%s*(%d%d%d%d)%.:e",        -- . 2025.:e038921 (article ID)
+    "%.%s*(%d%d%d%d)%.%s+doi:",   -- . 2025. doi:
+    "%.%s*(%d%d%d%d)%.%s+http",   -- . 2025. http (URL follows)
+
+    -- General formats
+    "%.%s*(%d%d%d%d)%.",          -- . 2025.
+    ",?%s*(%d%d%d%d)%.",          -- , 2025. or 2025.
+    "%((%d%d%d%d)%)",             -- (2025)
+
+    -- Fallback: any 4-digit number that could be a year
+    -- This will match standalone years in various contexts
+    "[^%d](%d%d%d%d)[^%d]",       -- Any 4 digits not adjacent to other digits
   }
 
   for _, pattern in ipairs(patterns) do
@@ -50,11 +62,14 @@ local function extract_year(blocks)
       local y = tonumber(year)
       -- Sanity check: year should be reasonable
       if y >= 1900 and y <= 2100 then
+        io.stderr:write("  Extracted year " .. y .. " using pattern: " .. pattern .. "\n")
         return y
       end
     end
   end
 
+  -- If no pattern matched, log the text for debugging
+  io.stderr:write("  WARNING: Could not extract year from: " .. text:sub(1, 100) .. "...\n")
   return nil
 end
 
@@ -155,6 +170,7 @@ function Pandoc(doc)
   local entry_count = 0
   local total_highlighted = 0
   local year_count = 0
+  local entries_without_year = 0
 
   for _, block in ipairs(refs_div.content) do
     if block.t == "Div" and block.classes:includes("csl-entry") then
@@ -163,6 +179,10 @@ function Pandoc(doc)
 
       -- Extract year from this entry
       local year = extract_year(block.content)
+
+      if not year then
+        entries_without_year = entries_without_year + 1
+      end
 
       -- If year changed, add a header
       if year and year ~= current_year then
@@ -208,6 +228,10 @@ function Pandoc(doc)
   io.stderr:write("Processed " .. entry_count .. " entries\n")
   io.stderr:write("Added " .. year_count .. " year headers\n")
   io.stderr:write("Highlighted " .. total_highlighted .. " author instances\n")
+
+  if entries_without_year > 0 then
+    io.stderr:write("WARNING: " .. entries_without_year .. " entries without detectable year\n")
+  end
 
   -- Update the refs div in the document
   doc = doc:walk({
