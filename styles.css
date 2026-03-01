@@ -1,7 +1,7 @@
 /* Levin Lab — styles.css
    Body 17px serif. Overview paragraphs spacious (14px margins).
-   Publications on index.html subordinated by color (#666) only.
-   Publications on publications.html at full color (#333). */
+   #refs-index (index.html) subordinated by color (#666) only.
+   #refs (publications.html) at full color (#333). */
 
 * {
   margin: 0;
@@ -72,17 +72,17 @@ a:hover {
 }
 
 /* Publications on index.html: full size, muted gray */
-body:has(h2#selected-publications) #refs {
+#refs-index {
   color: #666;
   line-height: 1.25;
 }
 
-body:has(h2#selected-publications) #refs h3 {
+#refs-index h3 {
   color: #444;
 }
 
 /* Shared ref layout */
-#refs {
+#refs, #refs-index {
   margin-top: 0;
   padding-left: 30px;
   padding-right: 30px;
@@ -102,7 +102,7 @@ body:has(h2#selected-publications) #refs h3 {
   padding: 0;
 }
 
-#refs > div, #refs-recent > div, #refs-by-year > div {
+#refs > div, #refs-index > div, #refs-recent > div, #refs-by-year > div {
   margin: 1.2em 0;
 }
 
