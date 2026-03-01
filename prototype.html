@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Levin Lab — Design Prototype</title>
+  <style>
+    /* ── Reset ────────────────────────────────────── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ── Prototype chrome ─────────────────────────── */
+    body { background: #d0d0d0; }
+
+    .proto-label {
+      background: #222;
+      color: #fff;
+      font-family: monospace;
+      font-size: 13px;
+      padding: 10px 24px;
+      letter-spacing: 1px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .proto-frame {
+      background: #fff;
+      margin-bottom: 0;
+    }
+
+    /* ── Design 1: Editorial Serif ────────────────── */
+    .design-1 {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 17px;
+      line-height: 1.6;
+      color: #1a1a1a;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 52px 32px 48px;
+      text-align: justify;
+    }
+
+    .design-1 h1 {
+      font-size: 44px;
+      font-weight: 700;
+      letter-spacing: -1.5px;
+      line-height: 1.05;
+      margin-bottom: 10px;
+    }
+
+    .design-1 h2 {
+      font-size: 13px;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 2.5px;
+      color: #888;
+      margin-bottom: 36px;
+      margin-top: 2px;
+    }
+
+    .design-1 h3 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: #aaa;
+      margin-top: 40px;
+      margin-bottom: 18px;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .design-1 p {
+      margin: 16px 0;
+    }
+
+    .design-1 .content > p:nth-of-type(1) {
+      border-left: 3px solid #1a1a1a;
+      padding-left: 20px;
+      font-size: 18px;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .design-1 #refs-index {
+      color: #555;
+      border-top: 2px solid #1a1a1a;
+      padding-top: 16px;
+    }
+
+    .design-1 .csl-entry {
+      margin: 14px 0;
+      line-height: 1.5;
+      font-size: 15px;
+    }
+
+    .design-1 a {
+      color: #1a1a1a;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    .design-1 a:hover { color: #555; }
+
+    .design-1 .footer {
+      margin-top: 48px;
+      padding-top: 16px;
+      border-top: 1px solid #ddd;
+      font-size: 13px;
+      color: #999;
+    }
+
+    /* ── Design 2: Modern Sans ────────────────────── */
+    .design-2 {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      font-size: 16px;
+      line-height: 1.65;
+      color: #111;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 56px 32px 56px;
+    }
+
+    .design-2 h1 {
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+
+    .design-2 h2 {
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #999;
+      margin-bottom: 40px;
+      margin-top: 4px;
+    }
+
+    .design-2 h3 {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2.5px;
+      color: #bbb;
+      margin-top: 0;
+      margin-bottom: 14px;
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .design-2 .content > p {
+      margin: 14px 0;
+      color: #333;
+    }
+
+    .design-2 .research-block {
+      background: #f6f6f6;
+      border-radius: 10px;
+      padding: 28px 32px;
+      margin: 28px 0;
+    }
+
+    .design-2 #refs-index {
+      color: #555;
+      margin-top: 40px;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .design-2 .csl-entry {
+      border-left: 2px solid #e0e0e0;
+      padding-left: 16px;
+      margin: 16px 0;
+      font-size: 14.5px;
+      line-height: 1.6;
+      color: #555;
+    }
+
+    .design-2 a {
+      color: #0055cc;
+      text-decoration: none;
+    }
+
+    .design-2 a:hover { text-decoration: underline; }
+
+    .design-2 .footer {
+      margin-top: 52px;
+      padding-top: 16px;
+      border-top: 1px solid #eee;
+      font-size: 13px;
+      color: #aaa;
+    }
+
+    /* ── Design 3: Bold Typographic ───────────────── */
+    .design-3 {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+      font-size: 17px;
+      line-height: 1.6;
+      color: #111;
+      max-width: 100%;
+    }
+
+    .design-3 .hero {
+      background: #111;
+      color: #fff;
+      padding: 64px 0 56px;
+    }
+
+    .design-3 .hero-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 40px;
+    }
+
+    .design-3 h1 {
+      font-size: 64px;
+      font-weight: 900;
+      letter-spacing: -3px;
+      line-height: 0.95;
+      margin-bottom: 18px;
+      color: #fff;
+    }
+
+    .design-3 .hero-sub {
+      font-size: 17px;
+      font-weight: 400;
+      color: #aaa;
+      letter-spacing: 0;
+      margin: 0;
+      max-width: 520px;
+    }
+
+    .design-3 .content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 48px 40px 56px;
+    }
+
+    .design-3 .content > p {
+      margin: 16px 0;
+      color: #333;
+      max-width: 680px;
+    }
+
+    .design-3 h3 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: #bbb;
+      margin-top: 48px;
+      margin-bottom: 20px;
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .design-3 #refs-index-3 {
+      color: #555;
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    .design-3 .csl-entry {
+      margin: 18px 0;
+      font-size: 15px;
+      line-height: 1.55;
+      color: #555;
+      padding-left: 20px;
+      border-left: 3px solid #e63946;
+    }
+
+    .design-3 a {
+      color: #e63946;
+      text-decoration: none;
+    }
+
+    .design-3 a:hover { text-decoration: underline; }
+
+    .design-3 .footer {
+      margin-top: 52px;
+      padding-top: 16px;
+      border-top: 1px solid #eee;
+      font-size: 13px;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Design 1: Editorial Serif ─────────────────── -->
+  <div class="proto-label">DESIGN 1 — Editorial Serif</div>
+  <div class="proto-frame">
+    <div class="design-1">
+      <div class="content">
+        <h1>Levin Lab</h1>
+        <h2>Cardiovascular genetics research at the University of Pennsylvania</h2>
+
+        <p>We study the genetic basis of cardiovascular disease using large-scale biobanks and electronic health records.</p>
+
+        <p>Our research characterizes how common and rare genetic variation shapes susceptibility to cardiovascular diseases. We use these discoveries to identify therapeutic targets, develop genetic risk prediction tools, and conduct mechanistic clinical studies to validate findings in humans.</p>
+
+        <p>We work with the <a href="#">Million Veteran Program</a>, <a href="#">Penn Medicine Biobank</a>, and other population-scale cohorts using computational genetics, epidemiologic methods, and clinical/translational approaches.</p>
+
+        <h3>Selected Publications</h3>
+
+        <div id="refs-index">
+          <div class="csl-entry">
+            Levin MG, Tsao NL, Singhal P, et al. Genome-wide association analysis identifies novel loci for coronary artery disease and improves genomic prediction.
+            <i>Nat Genet.</i> 2025;57(3):412–421.
+          </div>
+          <div class="csl-entry">
+            Levin MG, Libby P, Inouye M. Genetic architectures of cardiovascular and cardiometabolic traits.
+            <i>Circulation.</i> 2024;149(18):1423–1436.
+          </div>
+          <div class="csl-entry">
+            Levin MG, Rader DJ. Genetics of coronary artery disease: practical implications.
+            <i>JACC.</i> 2023;82(12):1185–1197.
+          </div>
+        </div>
+
+        <p><a href="#">View all publications →</a></p>
+
+        <p><a href="#">Contact</a> | <a href="#">GitHub</a></p>
+
+        <div class="footer">Last updated: February 28, 2026</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Design 2: Modern Sans ──────────────────────── -->
+  <div class="proto-label">DESIGN 2 — Modern Sans</div>
+  <div class="proto-frame">
+    <div class="design-2">
+      <div class="content">
+        <h1>Levin Lab</h1>
+        <h2>Cardiovascular genetics research at the University of Pennsylvania</h2>
+
+        <div class="research-block">
+          <p>We study the genetic basis of cardiovascular disease using large-scale biobanks and electronic health records.</p>
+
+          <p>Our research characterizes how common and rare genetic variation shapes susceptibility to cardiovascular diseases. We use these discoveries to identify therapeutic targets, develop genetic risk prediction tools, and conduct mechanistic clinical studies to validate findings in humans.</p>
+
+          <p>We work with the <a href="#">Million Veteran Program</a>, <a href="#">Penn Medicine Biobank</a>, and other population-scale cohorts using computational genetics, epidemiologic methods, and clinical/translational approaches.</p>
+        </div>
+
+        <h3>Selected Publications</h3>
+
+        <div id="refs-index">
+          <div class="csl-entry">
+            Levin MG, Tsao NL, Singhal P, et al. Genome-wide association analysis identifies novel loci for coronary artery disease and improves genomic prediction.
+            <i>Nat Genet.</i> 2025;57(3):412–421.
+          </div>
+          <div class="csl-entry">
+            Levin MG, Libby P, Inouye M. Genetic architectures of cardiovascular and cardiometabolic traits.
+            <i>Circulation.</i> 2024;149(18):1423–1436.
+          </div>
+          <div class="csl-entry">
+            Levin MG, Rader DJ. Genetics of coronary artery disease: practical implications.
+            <i>JACC.</i> 2023;82(12):1185–1197.
+          </div>
+        </div>
+
+        <p><a href="#">View all publications →</a></p>
+
+        <p><a href="#">Contact</a> | <a href="#">GitHub</a></p>
+
+        <div class="footer">Last updated: February 28, 2026</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Design 3: Bold Typographic ────────────────── -->
+  <div class="proto-label">DESIGN 3 — Bold Typographic</div>
+  <div class="proto-frame">
+    <div class="design-3">
+      <div class="hero">
+        <div class="hero-inner">
+          <h1>Levin Lab</h1>
+          <p class="hero-sub">Cardiovascular genetics research at the University of Pennsylvania</p>
+        </div>
+      </div>
+      <div class="content">
+        <p>We study the genetic basis of cardiovascular disease using large-scale biobanks and electronic health records.</p>
+        <p>Our research characterizes how common and rare genetic variation shapes susceptibility to cardiovascular diseases. We use these discoveries to identify therapeutic targets, develop genetic risk prediction tools, and conduct mechanistic clinical studies to validate findings in humans.</p>
+        <p>We work with the <a href="#">Million Veteran Program</a>, <a href="#">Penn Medicine Biobank</a>, and other population-scale cohorts using computational genetics, epidemiologic methods, and clinical/translational approaches.</p>
+        <h3>Selected Publications</h3>
+        <div id="refs-index-3">
+          <div class="csl-entry">
+            Levin MG, Tsao NL, Singhal P, et al. Genome-wide association analysis identifies novel loci for coronary artery disease and improves genomic prediction.
+            <i>Nat Genet.</i> 2025;57(3):412–421.
+          </div>
+          <div class="csl-entry">
+            Levin MG, Libby P, Inouye M. Genetic architectures of cardiovascular and cardiometabolic traits.
+            <i>Circulation.</i> 2024;149(18):1423–1436.
+          </div>
+          <div class="csl-entry">
+            Levin MG, Rader DJ. Genetics of coronary artery disease: practical implications.
+            <i>JACC.</i> 2023;82(12):1185–1197.
+          </div>
+        </div>
+        <p><a href="#">View all publications →</a></p>
+        <p><a href="#">Contact</a> | <a href="#">GitHub</a></p>
+        <div class="footer">Last updated: February 28, 2026</div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
