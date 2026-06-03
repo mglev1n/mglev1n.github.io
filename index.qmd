@@ -1,12 +1,13 @@
 ---
-title: "Levin Lab"
+title: "Michael G. Levin, MD — Levin Lab"
+pagetitle: "Michael G. Levin, MD — Levin Lab"
 format:
   html:
     minimal: true
     css: styles.css
     include-in-header:
       - text: |
-          <meta name="description" content="Cardiovascular genetics research at the University of Pennsylvania" />
+          <meta name="description" content="Michael G. Levin, MD — cardiologist and genetic epidemiologist at the University of Pennsylvania." />
           <meta name="twitter:card" content="summary" />
 validate-yaml: false
 bibliography: manuscripts.bib
@@ -34,24 +35,24 @@ validate_zotero_config <- function() {
   user_id <- params$zotero_user_id
   api_key <- params$zotero_api_key
   collection_key <- params$zotero_collection_key
-  
+
   if (is.na(user_id) || user_id == "") {
     stop("ZOTERO_USER_ID environment variable is not set or empty")
   }
-  
+
   if (is.na(api_key) || api_key == "") {
     stop("ZOTERO_API_KEY environment variable is not set or empty")
   }
-  
+
   if (is.na(collection_key) || collection_key == "") {
     stop("ZOTERO_COLLECTION_KEY environment variable is not set or empty")
   }
-  
+
   cat("✅ Zotero configuration validated\n")
   cat("   User ID: ***", substr(user_id, nchar(user_id)-3, nchar(user_id)), "\n")
   cat("   API Key: ***", substr(api_key, nchar(api_key)-3, nchar(api_key)), "\n")
   cat("   Collection: ***", substr(collection_key, nchar(collection_key)-3, nchar(collection_key)), "\n")
-  
+
   return(list(
     user_id = user_id,
     api_key = api_key,
@@ -86,18 +87,18 @@ cleanup_temp_files <- function() {
 fetch_zotero_bibliography <- function(collection_key, user_id, api_key, tags, filename) {
   tryCatch({
     cat("Fetching", filename, "from Zotero...\n")
-    
+
     # Build query based on tags
     query_list <- list(
       itemType = "-attachment",
       format = "bibtex"
     )
-    
+
     # Add tag filter if provided
     if (!is.null(tags) && tags != "") {
       query_list$tag <- tags
     }
-    
+
     # Fetch items from Zotero
     bib_data <- zoterro::items(
       collection_key = collection_key,
@@ -106,14 +107,14 @@ fetch_zotero_bibliography <- function(collection_key, user_id, api_key, tags, fi
       as_tibble = FALSE,
       query = query_list
     )
-    
+
     # Ensure directory exists
     ensure_dir(filename)
-    
+
     # Write to file
     writeLines(rawToChar(bib_data), filename)
     cat("Successfully saved", filename, "\n")
-    
+
     return(TRUE)
   }, error = function(e) {
     cat("Error fetching", filename, ":", e$message, "\n")
@@ -161,67 +162,67 @@ cat("=== All bibliographies fetched successfully ===\n")
 ```{r, include = FALSE}
 # Simple function to clean bibtex note fields
 clean_bibtex_authorship_notes <- function(bib_file_path) {
-  
+
   # Step 1: Read the bibtex file
   bib_content <- readLines(bib_file_path, warn = FALSE)
-  
+
   cleaned_lines <- c()
   i <- 1
-  
+
   while (i <= length(bib_content)) {
     line <- bib_content[i]
-    
+
     # Step 2: Check if line starts with "note = {"
     if (grepl("^\\s*note\\s*=\\s*\\{", line)) {
       # cat("DEBUG: Found note field at line", i, "\n")
-      
+
       # Step 3: Extract everything between opening and closing braces
       note_text <- ""
-      
+
       # Get the part after the opening brace from the first line
       first_part <- sub("^\\s*note\\s*=\\s*\\{(.*)$", "\\1", line)
       note_text <- first_part
-      
+
       # Continue reading lines until we find the closing brace
       while (!grepl("\\}", note_text) && i < length(bib_content)) {
         i <- i + 1
         note_text <- paste(note_text, bib_content[i], sep = "\n")
       }
-      
+
       # Remove the closing brace and comma
       note_text <- sub("\\}\\s*,?\\s*$", "", note_text)
-      
+
       # cat("DEBUG: Extracted note text:", note_text, "\n")
-      
+
       # Step 4: Split by newline
       note_lines <- strsplit(note_text, "\n", fixed = TRUE)[[1]]
-      
+
       # Step 5: Keep lines starting with "Authorship Note:"
       authorship_lines <- note_lines[grepl("^\\s*Authorship Note:", note_lines)]
-      
+
       # cat("DEBUG: Found", length(authorship_lines), "authorship lines\n")
-      
+
       # Step 6: If we have authorship lines, insert them back
       if (length(authorship_lines) > 0) {
         # Clean up the authorship line (remove "Authorship Note:" prefix)
         # authorship_content <- sub("^\\s*Authorship Note:\\s*", "", authorship_lines[1])
         authorship_content <- trimws(authorship_lines[1])
-        
+
         # cat("DEBUG: Final authorship content:", authorship_content, "\n")
-        
+
         # Insert the cleaned note field
         cleaned_lines <- c(cleaned_lines, paste0("\tnote = {", authorship_content, "},"))
       }
       # If no authorship lines found, skip the note field entirely
-      
+
     } else {
       # Not a note field, keep the line as-is
       cleaned_lines <- c(cleaned_lines, line)
     }
-    
+
     i <- i + 1
   }
-  
+
   return(cleaned_lines)
 }
 
@@ -230,16 +231,16 @@ process_bibtex_file <- function(input_file, output_file = NULL) {
   if (is.null(output_file)) {
     output_file <- input_file  # Overwrite the original file
   }
-  
+
   cat("Cleaning authorship notes in:", input_file, "\n")
-  
+
   cleaned_content <- clean_bibtex_authorship_notes(input_file)
-  
+
   # Write the cleaned content back to file
   writeLines(cleaned_content, output_file)
-  
+
   cat("Cleaned bibtex saved to:", output_file, "\n")
-  
+
   return(output_file)
 }
 
@@ -247,7 +248,7 @@ process_bibtex_file <- function(input_file, output_file = NULL) {
 clean_all_bibliography_files <- function() {
   # List of your bibliography files
   bib_files <- c("manuscripts.bib")
-  
+
   for (bib_file in bib_files) {
     if (file.exists(bib_file)) {
       process_bibtex_file(bib_file)
@@ -260,27 +261,161 @@ clean_all_bibliography_files <- function() {
 clean_all_bibliography_files()
 ```
 
-::: {.content}
+```{=html}
+<canvas id="dna-bg" aria-hidden="true"></canvas>
 
-## Cardiovascular genetics research at the University of Pennsylvania
+<div class="bar">
+  <a class="mk" href="index.html"><b>◆</b>&nbsp; Levin&nbsp;Lab</a>
+  <nav>
+    <a href="#research">Research</a>
+    <a href="#highlights">Highlights</a>
+    <a href="publications.html">Publications</a>
+    <a href="#contact">Contact</a>
+  </nav>
+</div>
 
-We study the genetic basis of cardiovascular disease using large-scale biobanks and electronic health records.
+<header class="hero max">
+  <div class="hero-grid">
+    <div class="hero-text">
+      <div class="eyebrow">Levin Lab — University of Pennsylvania</div>
+      <h1 class="statement">Human genetics, <em>translated</em> into medicine.</h1>
+      <p class="hero-sub">We use human genetics and bioinformatics to identify <em>therapeutic targets</em>, predict <em>cardiovascular risk</em>, and translate both into the clinic.</p>
+    </div>
+    <div class="portrait-wrap">
+      <div class="portrait-glow" aria-hidden="true"></div>
+      <div class="portrait-frame">
+        <img src="assets/headshot.jpg" alt="Michael G. Levin, MD">
+      </div>
+      <div class="plate">
+        <div class="nm">Michael G. Levin, MD, MSTR</div>
+        <div class="af">Cardiologist &amp; genetic epidemiologist · Assistant Professor of Medicine, University of Pennsylvania · Staff Cardiologist, Philadelphia VA Medical Center</div>
+      </div>
+    </div>
+  </div>
+</header>
 
-Our research characterizes how common and rare genetic variation shapes susceptibility to cardiovascular diseases. We use these discoveries to identify therapeutic targets, develop genetic risk prediction tools, and conduct mechanistic clinical studies to validate findings in humans.
+<section id="research" class="max">
+  <div class="kicker">Research</div>
+  <h2 class="sec-title">From <em>discovery</em> to the <em>bedside</em>.</h2>
+  <div class="exhibits">
+    <div class="exhibit">
+      <div class="et">Drug target identification &amp; validation</div>
+      <div class="ed">Large-scale genetic discovery across common and rare variants — built on bioinformatics and deep phenotyping — paired with fine-mapping, colocalization, and Mendelian randomization to nominate candidate genes and evaluate their putative causal roles.</div>
+    </div>
+    <div class="exhibit">
+      <div class="et">Cardiovascular risk prediction</div>
+      <div class="ed">We build, benchmark, and clinically evaluate polygenic risk scores against deeply phenotyped biobank and clinical cohorts for cardiovascular risk stratification.</div>
+    </div>
+    <div class="exhibit">
+      <div class="et">Clinical translation</div>
+      <div class="ed">Genetically-informed clinical trials and mechanistic clinical studies that test what genetic discoveries imply about human biology.</div>
+    </div>
+  </div>
+  <p class="biobanks">We work with biobanks including the <a href="https://www.mvp.va.gov/pwa/">Million Veteran Program</a>, <a href="https://pmbb.med.upenn.edu/">Penn Medicine BioBank</a>, <a href="https://www.ukbiobank.ac.uk/">UK Biobank</a>, and <a href="https://allofus.nih.gov/">All of Us</a> — across cardiovascular phenotypes including atherosclerosis, lipoproteins including lipoprotein(a), and heart failure and cardiomyopathy.</p>
+</section>
 
-We work with the [Million Veteran Program](https://www.mvp.va.gov/pwa/), [Penn Medicine Biobank](https://pmbb.med.upenn.edu/), and other population-scale cohorts using computational genetics, epidemiologic methods, and clinical/translational approaches.
+<section id="highlights" class="max">
+  <div class="kicker">Highlights</div>
+  <p class="hl-lead">100+ publications in journals including <em>JAMA</em>, <em>Nature Genetics</em>, and <em>Circulation</em>.</p>
+  <div class="hl">
+    <div class="hrow"><div class="ht">From gene to trial</div><div class="hx">A missense variant in <em>IL6R</em> protects against peripheral artery disease (<em>Circulation Research</em>, 2021) — a genetics-nominated target now being tested in our <strong>ongoing clinical trial</strong> of colchicine in PAD.</div></div>
+    <div class="hrow"><div class="ht">Toward the clinic</div><div class="hx">Widely-used coronary heart disease polygenic risk scores give <strong>discordant individual-level risk estimates</strong> (<em>JAMA</em>, 2025) — defining a clinical-implementation gap that must close before PRS reach the bedside.</div></div>
+  </div>
+</section>
 
-## Selected Publications
+<section id="publications" class="max">
+  <div class="kicker">Selected Publications</div>
+```
 
 ::: {#refs}
 :::
 
-[View all publications →](publications.html)
+```{=html}
+  <a class="viewall" href="publications.html">View all publications →</a>
+</section>
 
-<br>[Contact](mailto:Michael.Levin@pennmedicine.upenn.edu) | [GitHub](https://github.com/mglev1n)
+<section id="contact" class="closing max">
+  <div class="big">Open to research collaborations, partnerships, and trainees joining the lab. <a href="mailto:Michael.Levin@pennmedicine.upenn.edu">Get in touch →</a></div>
+  <div class="links">
+    <a href="https://scholar.google.com/citations?user=PLif7ksAAAAJ&amp;hl=en">Google Scholar</a>
+    <a href="https://orcid.org/0000-0002-9937-9932">ORCID</a>
+    <a href="https://github.com/mglev1n">GitHub</a>
+    <a href="https://www.linkedin.com/in/michael-levin-29268571/">LinkedIn</a>
+  </div>
+```
 
----
+<div class="upd">Last updated `{r} format(Sys.Date(), "%B %d, %Y")`</div>
 
-*Last updated: `{r} format(Sys.Date(), "%B %d, %Y")`*
+```{=html}
+</section>
 
-:::
+<script>
+(function () {
+  var canvas = document.getElementById('dna-bg');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  var W = 0, docH = 0;
+
+  function strokeColor() {
+    var c = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+    return c || '#d8a43f';
+  }
+
+  function draw() {
+    var STROKE = strokeColor();
+    ctx.clearRect(0, 0, W, docH);
+    ctx.strokeStyle = STROKE;
+    ctx.lineCap = 'round';
+    var defs = [
+      { cx: 0.24, ang:  0.12, amp: 0.82, freq: 0.0066, base: 0.0 },
+      { cx: 0.78, ang: -0.17, amp: 1.00, freq: 0.0057, base: 1.2 }
+    ];
+    if (W < 720) defs = [ defs[0] ];
+    var baseAmp = Math.min(120, W * 0.12);
+    for (var d = 0; d < defs.length; d++) {
+      var cfg = defs[d];
+      var st = Math.sin(cfg.ang), ct = Math.cos(cfg.ang);
+      var ax0 = cfg.cx * W, ay0 = docH * 0.5;
+      var amp = baseAmp * cfg.amp;
+      var reach = docH / Math.max(0.2, ct) * 1.2;
+      for (var s = 0; s < 2; s++) {
+        var ph = cfg.base + (s ? Math.PI : 0);
+        ctx.beginPath();
+        var first = true;
+        for (var t = -reach / 2; t <= reach / 2; t += 8) {
+          var env = amp * (0.58 + 0.42 * Math.sin(t * 0.0011 + cfg.base));
+          var off = env * Math.sin(t * cfg.freq + ph);
+          var px = ax0 + t * st + off * ct;
+          var py = ay0 + t * ct - off * st;
+          if (first) { ctx.moveTo(px, py); first = false; } else ctx.lineTo(px, py);
+        }
+        ctx.lineWidth = s ? 1.0 : 1.3;
+        ctx.globalAlpha = s ? 0.55 : 0.9;
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function resize() {
+    W = document.documentElement.clientWidth || window.innerWidth || 0;
+    docH = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, window.innerHeight || 0);
+    if (!W || !docH) { requestAnimationFrame(resize); return; }
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(docH * dpr);
+    canvas.style.width = W + 'px';
+    canvas.style.height = docH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    draw();
+  }
+
+  window.addEventListener('resize', resize, { passive: true });
+  window.addEventListener('load', resize);
+  if (window.ResizeObserver) { new ResizeObserver(function () { resize(); }).observe(document.body); }
+  resize();
+  setTimeout(resize, 400);
+  setTimeout(resize, 1200);
+})();
+</script>
+```
