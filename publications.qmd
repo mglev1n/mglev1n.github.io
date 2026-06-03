@@ -1,5 +1,7 @@
 ---
-title: "Publications"
+title: "Publications — Levin Lab"
+pagetitle: "Publications — Michael G. Levin, MD"
+engine: knitr
 format:
   html:
     minimal: true
@@ -16,28 +18,31 @@ filters:
 nocite: '@*'
 ---
 
-::: {.back-link}
-[← Back to main page](index.html)
-:::
+```{=html}
+<div class="bar">
+  <a class="mk" href="index.html"><b>◆</b>&nbsp; Levin&nbsp;Lab</a>
+  <nav>
+    <a href="index.html#research">Research</a>
+    <a href="index.html#highlights">Highlights</a>
+    <a href="publications.html" class="active">Publications</a>
+    <a href="index.html#contact">Contact</a>
+  </nav>
+</div>
 
-::: {.content style="text-align: justify"}
+<header class="page-head max">
+  <div class="eyebrow">Levin Lab — University of Pennsylvania</div>
+  <h1 class="page-title">Publications</h1>
+  <p class="page-sub">Complete list of peer-reviewed publications and preprints.</p>
+</header>
 
-```{r count-pubs, echo=FALSE, results='asis'}
-# Count publications in bib file
-# if (file.exists("manuscripts.bib")) {
-#   bib_content <- readLines("manuscripts.bib", warn = FALSE)
-#   n_entries <- sum(grepl("^@", bib_content))
-#   cat(paste0("*Complete list of ", n_entries, " publications*\n\n"))
-# }
+<section class="pubs-list max">
 ```
 
 ::: {#refs}
 :::
 
-::: {.footer}
-[← Back to main page](index.html)
+```{=html}
+</section>
+```
 
-*Last updated: `r format(Sys.Date(), "%B %d, %Y")`*
-:::
-
-:::
+<div class="page-footer"><a href="index.html">← Back to home</a><span>Last updated `{r} format(Sys.Date(), "%B %d, %Y")`</span></div>
