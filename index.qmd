@@ -9,6 +9,9 @@ format:
       - text: |
           <meta name="description" content="Michael G. Levin, MD — cardiologist and genetic epidemiologist at the University of Pennsylvania." />
           <meta name="twitter:card" content="summary" />
+          <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+          <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
+          <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 validate-yaml: false
 bibliography: manuscripts.bib
 csl: "templates/american-medical-association-no-et-al-v2.csl"
