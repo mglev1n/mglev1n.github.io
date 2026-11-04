@@ -37,7 +37,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Install pandoc (fast, no need to cache)
       - name: Setup Pandoc
@@ -54,7 +54,7 @@ jobs:
       # Cache TinyTeX - using a simpler key that doesn't change with every .qmd edit
       # Only invalidate when we explicitly want to rebuild LaTeX packages
       - name: Cache TinyTeX
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.TinyTeX
           key: ${{ runner.os }}-tinytex-2024
@@ -79,7 +79,7 @@ jobs:
       # Restore R packages cache first (read-only for this step)
       - name: Restore R packages cache
         id: cache-renv
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6
         with:
           path: |
             ~/.local/share/renv
@@ -173,7 +173,7 @@ jobs:
       # Save R packages cache only if it was a miss (avoid unnecessary saves)
       - name: Save R packages cache
         if: steps.cache-renv.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v6
         with:
           path: |
             ~/.local/share/renv
@@ -196,10 +196,10 @@ jobs:
           quarto render publications.qmd
 
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v6
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           # Upload the rendered HTML files and any supporting files
           path: '.'
@@ -214,4 +214,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
