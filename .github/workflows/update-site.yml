@@ -26,7 +26,9 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Pinned to 24.04: Posit Package Manager serves prebuilt R binaries for
+    # this release. On newer images (e.g. 26.04) every package compiles from source.
+    runs-on: ubuntu-24.04
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -57,9 +59,9 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.TinyTeX
-          key: ${{ runner.os }}-tinytex-2024
+          key: ${{ runner.os }}-ubuntu-24.04-tinytex-2024
           restore-keys: |
-            ${{ runner.os }}-tinytex-
+            ${{ runner.os }}-ubuntu-24.04-tinytex-
 
       - name: Verify Quarto and pandoc installation
         run: |
@@ -84,9 +86,9 @@ jobs:
           path: |
             ~/.local/share/renv
             ~/.cache/R/renv
-          key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+          key: ${{ runner.os }}-ubuntu-24.04-R4.4.0-renv-${{ hashFiles('**/renv.lock') }}
           restore-keys: |
-            ${{ runner.os }}-renv-
+            ${{ runner.os }}-ubuntu-24.04-R4.4.0-renv-
 
       - name: Install system dependencies
         run: |
@@ -95,7 +97,15 @@ jobs:
             libcurl4-openssl-dev \
             libssl-dev \
             libxml2-dev \
-            libfontconfig1-dev
+            libfontconfig1-dev \
+            libuv1-dev \
+            libharfbuzz-dev \
+            libfribidi-dev \
+            libfreetype6-dev \
+            libpng-dev \
+            libjpeg-dev \
+            libtiff-dev \
+            libwebp-dev
 
       - name: Install renv
         run: |
