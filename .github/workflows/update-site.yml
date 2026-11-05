@@ -51,17 +51,6 @@ jobs:
         uses: quarto-dev/quarto-actions/setup@v2
         with:
           version: release
-          tinytex: true
-
-      # Cache TinyTeX - using a simpler key that doesn't change with every .qmd edit
-      # Only invalidate when we explicitly want to rebuild LaTeX packages
-      - name: Cache TinyTeX
-        uses: actions/cache@v6
-        with:
-          path: ~/.TinyTeX
-          key: ${{ runner.os }}-ubuntu-24.04-tinytex-2024
-          restore-keys: |
-            ${{ runner.os }}-ubuntu-24.04-tinytex-
 
       - name: Verify Quarto and pandoc installation
         run: |
