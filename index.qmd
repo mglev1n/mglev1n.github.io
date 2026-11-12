@@ -8,7 +8,17 @@ format:
     include-in-header:
       - text: |
           <meta name="description" content="The Levin Lab at the University of Pennsylvania uses human genetics to identify therapeutic targets, predict cardiovascular risk, and bring both into clinical care." />
-          <meta name="twitter:card" content="summary" />
+          <!-- Link previews (Slack, LinkedIn, iMessage, X). Image: assets/social-card.png, 1200 x 630. -->
+          <meta property="og:type" content="website" />
+          <meta property="og:site_name" content="Levin Lab" />
+          <meta property="og:title" content="Levin Lab | Michael G. Levin, MD, University of Pennsylvania" />
+          <meta property="og:description" content="The Levin Lab at the University of Pennsylvania uses human genetics to identify therapeutic targets, predict cardiovascular risk, and bring both into clinical care." />
+          <meta property="og:url" content="https://www.levin-lab.org/" />
+          <meta property="og:image" content="https://www.levin-lab.org/assets/social-card.png" />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          <meta property="og:image:alt" content="Levin Lab wordmark. University of Pennsylvania and Philadelphia VA Medical Center." />
+          <meta name="twitter:card" content="summary_large_image" />
           <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
           <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
           <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -297,6 +307,49 @@ html_escape <- function(x) {
 }
 
 raw_html <- function(...) cat("\n```{=html}\n", ..., "\n```\n\n", sep = "")
+```
+
+```{=html}
+<script>
+// The home page shows the wordmark in one place at a time: large in the hero while the
+// hero is on screen, small in the header once the hero has scrolled out of view.
+// This script only reports which of the two should show, by setting data-wordmark on
+// <html> to "hero" or "header". styles.css does the showing and hiding (search it for
+// "data-wordmark"). If this script does not run, the header wordmark is simply always visible.
+(function () {
+  var root = document.documentElement;
+
+  // This line runs before the browser has drawn the header (the script sits above it in
+  // the page), so the header wordmark does not flash up while the page loads.
+  root.setAttribute("data-wordmark", "hero");
+
+  // The rest waits until the whole page has been read, so the header and hero exist.
+  document.addEventListener("DOMContentLoaded", function () {
+    var header = document.querySelector("header.site");
+    var hero = document.querySelector(".hero h1");  // the large wordmark
+    if (!header || !hero) {  // the markup has changed: fall back to always showing the header wordmark
+      root.removeAttribute("data-wordmark");
+      return;
+    }
+
+    function update() {
+      // Height of the strip at the top of the window that the header covers while its own
+      // wordmark is hidden. (On phones the header grows by a row when its wordmark shows,
+      // and styles.css cancels that growth with an equal negative margin. Adding the margin
+      // back in gives the same number whichever wordmark is showing.)
+      var covered = header.offsetHeight + parseFloat(getComputedStyle(header).marginBottom);
+      // The large wordmark is in view as long as its bottom edge is below that strip.
+      var inView = hero.getBoundingClientRect().bottom > covered;
+      var showing = inView ? "hero" : "header";
+      if (root.getAttribute("data-wordmark") !== showing) root.setAttribute("data-wordmark", showing);
+    }
+
+    update();
+    window.addEventListener("scroll", update, { passive: true });  // check again on every scroll
+    window.addEventListener("resize", update);  // and when the window, and so the header, changes size
+  });
+})();
+</script>
 ```
 
 ```{r site-header, echo = FALSE, results = "asis"}

@@ -12,8 +12,36 @@ local levin_patterns = {
   "Levin M,", "Levin M.", "MG Levin", "M Levin"
 }
 
+-- Mark preprints so that the CSL can print their server ("medRxiv. Preprint. 2026.").
+-- Zotero exports a preprint to BibTeX as @misc with the server name as publisher.
+-- Pandoc reads that as a reference with no type and no journal, so the CSL has no
+-- venue to print and cannot tell the entry from any other untyped one. A preprint
+-- is recognised here by a server name containing "rxiv" (medRxiv, bioRxiv, arXiv)
+-- in its publisher or journal. It goes to citeproc as CSL type "article", with the
+-- bare server name as publisher. References in the metadata take precedence over
+-- bibliography entries with the same id, so all other entries still come straight
+-- from the bibliography file.
+-- lua/bibliography-processor.lua has the same function: change both together.
+local function retype_preprints(doc)
+  local preprints = pandoc.List()
+  for _, ref in ipairs(pandoc.utils.references(doc)) do
+    local venue = pandoc.utils.stringify(ref.publisher or "") .. " " ..
+                  pandoc.utils.stringify(ref["container-title"] or "")
+    local server = venue:match("%a*[Rr][Xx][Ii][Vv]%a*")
+    if server then
+      ref.type = "article"
+      ref.publisher = server
+      preprints:insert(ref)
+    end
+  end
+  io.stderr:write("Retyped " .. #preprints .. " preprints\n")
+  doc.meta.references = preprints
+  return doc
+end
+
 -- Run citeproc on a document
 local function run_citeproc(doc)
+  doc = retype_preprints(doc)
   io.stderr:write("Running citeproc...\n")
   if PANDOC_VERSION >= '2.19.1' then
     return pandoc.utils.citeproc(doc)
@@ -188,45 +216,24 @@ local function qualifies_for_inclusion(entry_div)
   return first or senior or equal, first, senior, equal
 end
 
--- Helper function to wrap the Authorship Note (Emph) and its immediate trailing period (Str)
-local function wrap_authorship_note(inlines)
-  local new_inlines = pandoc.List:new()
-  local i = 1
-
-  while i <= #inlines do
-    local elem = inlines[i]
-
-    -- Check if the current element is the Authorship Note Emph
-    if elem.t == "Emph" and pandoc.utils.stringify(elem):match("Authorship Note:") then
-
-      -- Start the content for the new span with the Emph content
-      local span_content = pandoc.List:new(elem.content)
-
-      -- Look at the next element (i + 1)
-      local next_elem = inlines[i + 1]
-
-      -- Check if the next element exists and is a string containing just a period (and optional whitespace)
-      if next_elem and next_elem.t == "Str" and next_elem.text:match("^%.%s*$") then
-
-        -- Append the period text to the span content
-        span_content:append(next_elem)
-
-        -- Consume the period element by advancing the index
-        i = i + 1
+-- Remove the authorship note from an entry's inlines, with the ". " that the CSL
+-- puts before it, so the entry ends at the DOI like an entry that has no note.
+-- Call this only after the entry has been selected: the equal-contribution check
+-- above reads the note. The note is still shown on publications.html.
+local function drop_authorship_note(inlines)
+  for i = #inlines, 1, -1 do
+    if pandoc.utils.stringify(inlines[i]):match("^Authorship Note:") then
+      inlines:remove(i)
+      if inlines[i - 1] and inlines[i - 1].t == "Space" then
+        inlines:remove(i - 1)
+        if inlines[i - 2] and inlines[i - 2].t == "Str" and inlines[i - 2].text == "." then
+          inlines:remove(i - 2)
+        end
       end
-
-      -- Replace the current Emph element (and the trailing period, if found) with the new Span
-      new_inlines:append(pandoc.Span(span_content, {class = "authorship-note-index"}))
-
-    else
-      -- If it's not the target Emph, just keep the element
-      new_inlines:append(elem)
+      break
     end
-
-    i = i + 1
   end
-
-  return new_inlines
+  return inlines
 end
 
 -- Main processing function
@@ -311,15 +318,15 @@ function Pandoc(doc)
         end
         return elem
       end,
-      Emph = function(elem)
-        local text = pandoc.utils.stringify(elem)
-        -- Check if this is an authorship note
-        if text:match("Authorship Note:") then
-          return pandoc.Span(elem.content, {class = "authorship-note-index"})
-        end
-        return elem
-      end,
     })
+
+    -- The home page does not show authorship notes
+    entry.content = entry.content:map(function(block)
+      if block.t == "Para" or block.t == "Plain" then
+        block.content = drop_authorship_note(block.content)
+      end
+      return block
+    end)
 
     table.insert(new_content, entry)
     local preview = pandoc.utils.stringify(entry.content):sub(1, 60)

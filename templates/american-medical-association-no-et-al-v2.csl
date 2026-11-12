@@ -250,6 +250,18 @@
             <text variable="event-place"/>
           </group>
         </else-if>
+        <else-if type="article">
+          <!-- Preprints: "medRxiv. Preprint. 2026." The bibliography data gives a preprint
+               no type, so the Lua filters set this type and put the server name in publisher
+               (retype_preprints in lua/). -->
+          <group prefix=" " suffix="." delimiter=". ">
+            <text variable="publisher" font-style="italic"/>
+            <text value="Preprint"/>
+            <date variable="issued">
+              <date-part name="year"/>
+            </date>
+          </group>
+        </else-if>
         <else>
           <text macro="editor" prefix=" " suffix="."/>
           <group prefix=" " suffix=".">
