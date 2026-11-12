@@ -1,23 +1,14 @@
 -- bibliography-processor.lua
--- Manually runs citeproc, then adds year headers and author highlighting
+-- Manually runs citeproc, then adds year headers and lays each entry out in
+-- three lines (title, authors, venue)
 -- Leverages the fact that citeproc already sorts entries by year
 
 io.stderr:write("\n=== BIBLIOGRAPHY PROCESSOR ===\n")
 
--- Levin name patterns for exact matches
-local levin_patterns = {
-  "Levin MG", "Levin M", "Levin", "Levin MG,", "Levin MG.",
-  "Levin M,", "Levin M.", "MG Levin", "M Levin", "Levin, MG", "Levin, M"
-}
-
-local levin_lookup = {}
-for _, pattern in ipairs(levin_patterns) do
-  levin_lookup[pattern] = true
-end
-
--- Context tracking for multi-element highlighting
-local levin_context = false
-local context_distance = 0
+-- lua/publication-entry.lua builds the three-line entry and emphasises Levin's
+-- name. Both filters load it from the folder this file is in, much as source()
+-- does in R.
+local pub = dofile(pandoc.path.join({pandoc.path.directory(PANDOC_SCRIPT_FILE), "publication-entry.lua"}))
 
 -- Mark preprints so that the CSL can print their server ("medRxiv. Preprint. 2026.").
 -- Zotero exports a preprint to BibTeX as @misc with the server name as publisher.
@@ -101,67 +92,6 @@ local function extract_year(blocks)
   return nil
 end
 
--- Check if text should be highlighted
-local function should_highlight(text)
-  -- Exact match
-  if levin_lookup[text] then
-    levin_context = true
-    context_distance = 0
-    return true
-  end
-
-  -- Pattern matching for Levin
-  if text:find("Levin") then
-    levin_context = true
-    context_distance = 0
-    if text:match("^Levin,?%s+M?G?[%.,]?$") or
-       text:match("^M?G?%s+Levin[%.,]?$") or
-       text:match("^Levin[%.,]?$") then
-      return true
-    end
-  end
-
-  -- Highlight standalone initials if we recently saw "Levin"
-  if levin_context and context_distance <= 3 then
-    if text == "MG" or text == "MG," or text == "MG." or
-       text == "M" or text == "M," or text == "M." then
-      return true
-    end
-  end
-
-  return false
-end
-
--- Update context distance
-local function update_context()
-  if levin_context then
-    context_distance = context_distance + 1
-    if context_distance > 5 then
-      levin_context = false
-      context_distance = 0
-    end
-  end
-end
-
--- Reset context (for new entries)
-local function reset_context()
-  levin_context = false
-  context_distance = 0
-end
-
--- Highlight Levin with context tracking
-local function highlight_with_context(elem)
-  if elem.t == "Str" then
-    local highlight = should_highlight(elem.text)
-    update_context()
-
-    if highlight then
-      return pandoc.Strong({pandoc.Str(elem.text)})
-    end
-  end
-  return elem
-end
-
 -- Get the #refs div
 local function get_refs_div(doc)
   local refs_div = nil
@@ -197,16 +127,19 @@ function Pandoc(doc)
   local current_year = nil
   local entry_count = 0
   local total_highlighted = 0
+  local one_paragraph_count = 0
   local year_count = 0
   local entries_without_year = 0
 
   for _, block in ipairs(refs_div.content) do
     if block.t == "Div" and block.classes:includes("csl-entry") then
       entry_count = entry_count + 1
-      reset_context()  -- Reset context for each entry
 
-      -- Extract year from this entry
-      local year = extract_year(block.content)
+      -- Extract year from this entry. The citation style puts marker characters in
+      -- each entry (see lua/publication-entry.lua), so the year is read from a copy
+      -- without the markers, which reads as one plain citation:
+      -- "12. Authors. Title. Journal. Year;Vol:Pages. doi:..."
+      local year = extract_year(pub.without_markers(block).content)
 
       if not year then
         entries_without_year = entries_without_year + 1
@@ -220,60 +153,30 @@ function Pandoc(doc)
         year_count = year_count + 1
       end
 
-      -- Highlight Levin and style authorship notes - walk through content with context tracking
-      local entry_highlights = 0
-      block.content = block.content:walk({
-        Str = function(elem)
-          local result = highlight_with_context(elem)
-          if result.t == "Strong" then
-            entry_highlights = entry_highlights + 1
-          end
-          return result
-        end,
-        -- Wrap authorship notes in a span for styling
-        Emph = function(elem)
-          local text = pandoc.utils.stringify(elem)
-          -- Check if this is an authorship note
-          if text:match("Authorship Note:") then
-            return pandoc.Span(elem.content, {class = "authorship-note"})
-          end
-          return elem
-        end,
-        -- Reset context at paragraph boundaries
-        Para = function(para)
-          reset_context()
-          return nil  -- continue walking
-        end
-      })
-
-      total_highlighted = total_highlighted + entry_highlights
-
-      -- Move the leading citation number ("12.") into its own span so the
-      -- stylesheet can set the numbers in a gutter beside the entry text
-      local first_block = block.content[1]
-      if first_block and (first_block.t == "Para" or first_block.t == "Plain") then
-        local inlines = first_block.content
-        local first = inlines[1]
-        if first and first.t == "Str" and first.text:match("^%d+%.$") then
-          inlines[1] = pandoc.Span({first}, {class = "csl-num"})
-          if inlines[2] and inlines[2].t == "Space" then
-            inlines:remove(2)
-          end
-          first_block.content = inlines
-        end
-      end
+      -- Lay the entry out in three lines: title, authors, venue. This also puts the
+      -- citation number ("12.") in its own span, which the stylesheet sets in a
+      -- gutter beside the entry, emphasises Levin's name, and puts the authorship
+      -- note after the venue.
+      local entry, done = pub.format(block, {show_number = true, show_note = true})
+      if done.levin then total_highlighted = total_highlighted + 1 end
+      if not done.three_lines then one_paragraph_count = one_paragraph_count + 1 end
 
       -- Add the entry
-      table.insert(new_content, block)
+      table.insert(new_content, entry)
     end
   end
 
   io.stderr:write("Processed " .. entry_count .. " entries\n")
   io.stderr:write("Added " .. year_count .. " year headers\n")
-  io.stderr:write("Highlighted " .. total_highlighted .. " author instances\n")
+  io.stderr:write("Emphasised Levin in " .. total_highlighted .. " entries\n")
 
   if entries_without_year > 0 then
     io.stderr:write("WARNING: " .. entries_without_year .. " entries without detectable year\n")
+  end
+
+  if one_paragraph_count > 0 then
+    io.stderr:write("WARNING: " .. one_paragraph_count .. " entries have no part markers and are shown " ..
+                    "as one paragraph. Is the csl file templates/american-medical-association-no-et-al-v2.csl?\n")
   end
 
   -- Update the refs div in the document
