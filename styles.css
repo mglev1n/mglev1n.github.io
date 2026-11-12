@@ -133,7 +133,6 @@ section p + p { margin-top: 12px; }
 /* The CSL wraps the note in <strong>; keep it at normal weight because the stylesheet
    loads no bold italic, and the browser would otherwise synthesize one. */
 .authorship-note { color: var(--muted); font-style: italic; font-weight: 400; }
-.authorship-note-index { display: none; }
 
 .page-head { padding: 48px 0 8px; }
 .page-head h1 { font-weight: 500; font-size: 38px; line-height: 1.15; }
