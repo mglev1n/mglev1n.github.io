@@ -6,7 +6,7 @@
 -- the site shows:
 --
 --   Title                      links to the DOI, or to the URL if there is no DOI
---   Authors                    long lists are shortened, see MAX_AUTHORS below
+--   Authors                    every author, with Levin's name emphasised
 --   Journal. Year;Vol:Pages.   plus the authorship note on the publications page
 --
 -- How the parts are found: the citation style
@@ -16,22 +16,13 @@
 -- where a part ends, so a title with a period, colon, or question mark in it cannot
 -- be cut in the wrong place. Names, title, and venue are still formatted by the
 -- citation style; nothing about journal, year, volume, or pages is decided here.
+-- The marker between author names is what lets Levin's name be found as one whole
+-- name, even beside an institution whose name has a comma in it.
 
 local M = {}
 
--- ===== Setting: how many authors to show =======================================
--- An entry with more than MAX_AUTHORS authors shows the first three, then Levin,
--- then the last author, with "…" wherever names are left out. For example:
---   Lee DSM, Cardone KM, Zhang DY, … Levin MG, Damrauer SM
---   Fanaroff AC, Coratti S, Farraday D, … Levin MG, … Patel MS
--- Set MAX_AUTHORS to 0 to show every author on both pages.
-local MAX_AUTHORS = 8
-
--- How many names a shortened list starts with.
-local FIRST_AUTHORS = 3
-
 -- Levin's name as the citation style prints it ("Levin M" where a reference gives
--- no middle initial). A name in this list is emphasised and is always shown.
+-- no middle initial). An author name in this list is emphasised on both pages.
 local LEVIN_NAMES = { "Levin MG", "Levin M", "Levin", "MG Levin", "M Levin" }
 
 -- ===== Markers ==================================================================
@@ -227,33 +218,26 @@ local function is_levin(name)
   return IS_LEVIN[stringify(name)] == true
 end
 
--- Returns the inlines of the author line, and true if any names were left out.
+-- Returns the inlines of the author line: every name, with ", " between names
+-- as the citation style has it, and Levin's name in <strong>. Also returns true
+-- if Levin's name was found.
 local function author_line(names)
-  local shorten = MAX_AUTHORS > 0 and #names > MAX_AUTHORS
   local out = pandoc.Inlines({})
-  local previous = 0  -- position of the last name that was printed
-  local printed = 0
+  local found_levin = false
 
   for i, name in ipairs(names) do
-    local levin = is_levin(name)
-    if not shorten or i <= FIRST_AUTHORS or i == #names or levin then
-      if previous > 0 then
-        out:extend({pandoc.Str(","), pandoc.Space()})
-      end
-      if i > previous + 1 then
-        out:extend({pandoc.Str("…"), pandoc.Space()})  -- names were left out here
-      end
-      if levin then
-        out:insert(pandoc.Strong(name))
-      else
-        out:extend(name)
-      end
-      previous = i
-      printed = printed + 1
+    if i > 1 then
+      out:extend({pandoc.Str(","), pandoc.Space()})
+    end
+    if is_levin(name) then
+      out:insert(pandoc.Strong(name))
+      found_levin = true
+    else
+      out:extend(name)
     end
   end
 
-  return out, printed < #names
+  return out, found_levin
 end
 
 -- ===== Fallback: the entry as one paragraph =====================================
@@ -289,12 +273,11 @@ end
 --           show_note    true to print the authorship note after the venue
 -- Returns the new entry and a table that says what was done:
 --   three_lines  false if the entry had no markers and stayed one paragraph
---   shortened    true if author names were left out
 --   levin        true if Levin's name was found and emphasised
 function M.format(entry, options)
   local parts = split_entry(entry)
   if not parts then
-    return one_paragraph(entry, options), { three_lines = false, shortened = false, levin = false }
+    return one_paragraph(entry, options), { three_lines = false, levin = false }
   end
 
   local lines = pandoc.List({})
@@ -316,13 +299,10 @@ function M.format(entry, options)
   lines:insert(line("pub-title", title))
 
   -- Line 2: the authors
-  local shortened, levin = false, false
+  local levin = false
   if #parts.names > 0 then
     local authors
-    authors, shortened = author_line(parts.names)
-    for _, name in ipairs(parts.names) do
-      levin = levin or is_levin(name)
-    end
+    authors, levin = author_line(parts.names)
     lines:insert(line("pub-authors", authors))
   end
 
@@ -343,7 +323,7 @@ function M.format(entry, options)
     lines:insert(line("pub-venue", venue))
   end
 
-  return pandoc.Div(lines, entry.attr), { three_lines = true, shortened = shortened, levin = levin }
+  return pandoc.Div(lines, entry.attr), { three_lines = true, levin = levin }
 end
 
 return M

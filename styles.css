@@ -143,7 +143,7 @@ section p + p { margin-top: 12px; }
 #refs-index .csl-entry {
   margin-left: 0;
   text-indent: 0;
-  padding: 11px 0;
+  padding: 13px 0;
   /* Text size for an entry that could not be split into three lines and is shown as
      one paragraph (see the fallback in lua/publication-entry.lua) */
   font-size: 17px;
@@ -156,12 +156,17 @@ section p + p { margin-top: 12px; }
      .pub-title    the title, which links to the paper
      .pub-authors  the authors, with Levin's name in <strong>
      .pub-venue    journal, year, volume, pages; on publications.html also the authorship note
-   Only the title and Levin's name are in the body ink colour; the rest is grey. */
+   Only the title and Levin's name are in the body ink colour; the rest is grey.
+   Every author is listed, so the author block can run to many lines: Levin's name is
+   set heavy enough to find in it, and the small gaps keep the venue from reading as
+   the block's last line. */
 .pub-title { font-size: 18px; line-height: 1.35; }
 .pub-authors,
-.pub-venue { color: var(--muted); font-size: 15px; line-height: 1.45; }
-.pub-authors { margin-top: 3px; }
-.pub-authors strong { color: var(--text); font-weight: 500; white-space: nowrap; }
+.pub-venue { color: var(--muted); font-size: 15px; line-height: 1.45; margin-top: 3px; }
+.pub-authors strong { color: var(--text); font-weight: 600; white-space: nowrap; }
+/* Where the browser supports it, do not leave one word alone on the last line */
+.pub-title,
+.pub-authors { text-wrap: pretty; }
 
 /* The title links to the paper. A page of underlined titles is heavy to read, so the
    underline shows only under the pointer and on keyboard focus (with an outline). */

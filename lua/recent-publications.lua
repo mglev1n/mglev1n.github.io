@@ -5,9 +5,9 @@
 
 io.stderr:write("\n=== FIRST/SENIOR AUTHOR FILTER ===\n")
 
--- lua/publication-entry.lua builds the three-line entry and holds the setting for
--- shortening long author lists (MAX_AUTHORS). Both filters load it from the folder
--- this file is in, much as source() does in R.
+-- lua/publication-entry.lua builds the three-line entry and emphasises Levin's
+-- name. Both filters load it from the folder this file is in, much as source()
+-- does in R.
 local pub = dofile(pandoc.path.join({pandoc.path.directory(PANDOC_SCRIPT_FILE), "publication-entry.lua"}))
 
 local n_recent = 5  -- default
@@ -292,7 +292,6 @@ function Pandoc(doc)
   local keep_count = math.min(n_recent, #qualifying_entries)
   local new_content = {}
 
-  local shortened_count = 0
   local one_paragraph_count = 0
 
   for i = 1, keep_count do
@@ -300,7 +299,6 @@ function Pandoc(doc)
     -- neither the citation number nor the authorship note. (The entry has already
     -- been selected, so the equal-contribution check above has read the note.)
     local entry, done = pub.format(qualifying_entries[i].block, {show_number = false, show_note = false})
-    if done.shortened then shortened_count = shortened_count + 1 end
     if not done.three_lines then one_paragraph_count = one_paragraph_count + 1 end
 
     table.insert(new_content, entry)
@@ -309,7 +307,6 @@ function Pandoc(doc)
   end
 
   io.stderr:write("\n=== Filtered to " .. keep_count .. " first/senior author publications ===\n")
-  io.stderr:write("Shortened " .. shortened_count .. " author lists\n")
   if one_paragraph_count > 0 then
     io.stderr:write("WARNING: " .. one_paragraph_count .. " entries have no part markers and are shown " ..
                     "as one paragraph. Is the csl file templates/american-medical-association-no-et-al-v2.csl?\n")

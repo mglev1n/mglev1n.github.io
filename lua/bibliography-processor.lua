@@ -5,9 +5,9 @@
 
 io.stderr:write("\n=== BIBLIOGRAPHY PROCESSOR ===\n")
 
--- lua/publication-entry.lua builds the three-line entry, emphasises Levin's name,
--- and holds the setting for shortening long author lists (MAX_AUTHORS). Both
--- filters load it from the folder this file is in, much as source() does in R.
+-- lua/publication-entry.lua builds the three-line entry and emphasises Levin's
+-- name. Both filters load it from the folder this file is in, much as source()
+-- does in R.
 local pub = dofile(pandoc.path.join({pandoc.path.directory(PANDOC_SCRIPT_FILE), "publication-entry.lua"}))
 
 -- Mark preprints so that the CSL can print their server ("medRxiv. Preprint. 2026.").
@@ -127,7 +127,6 @@ function Pandoc(doc)
   local current_year = nil
   local entry_count = 0
   local total_highlighted = 0
-  local shortened_count = 0
   local one_paragraph_count = 0
   local year_count = 0
   local entries_without_year = 0
@@ -160,7 +159,6 @@ function Pandoc(doc)
       -- note after the venue.
       local entry, done = pub.format(block, {show_number = true, show_note = true})
       if done.levin then total_highlighted = total_highlighted + 1 end
-      if done.shortened then shortened_count = shortened_count + 1 end
       if not done.three_lines then one_paragraph_count = one_paragraph_count + 1 end
 
       -- Add the entry
@@ -171,7 +169,6 @@ function Pandoc(doc)
   io.stderr:write("Processed " .. entry_count .. " entries\n")
   io.stderr:write("Added " .. year_count .. " year headers\n")
   io.stderr:write("Emphasised Levin in " .. total_highlighted .. " entries\n")
-  io.stderr:write("Shortened " .. shortened_count .. " author lists\n")
 
   if entries_without_year > 0 then
     io.stderr:write("WARNING: " .. entries_without_year .. " entries without detectable year\n")
