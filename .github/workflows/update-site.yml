@@ -194,13 +194,18 @@ jobs:
         run: |
           quarto render publications.qmd
 
+      # GitHub Pages shows 404.html for any address that does not exist
+      - name: Render not-found page
+        run: |
+          quarto render 404.qmd
+
       # Publish only the files the site needs. Uploading the whole repository also
       # published sources, build inputs, and old design drafts (for example
       # prototype.html, docs/, renv.lock, and manuscripts.bib).
       - name: Assemble site files
         run: |
           mkdir -p _site/gallery
-          cp index.html publications.html styles.css _site/
+          cp index.html publications.html 404.html styles.css _site/
           cp -r assets _site/assets
           # Gallery photos, if any. The folder's README and captions.csv are build inputs.
           find gallery -maxdepth 1 -type f \
