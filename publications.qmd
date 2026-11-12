@@ -1,6 +1,6 @@
 ---
-title: "Publications — Levin Lab"
-pagetitle: "Publications — Michael G. Levin, MD"
+title: "Publications"
+pagetitle: "Publications | Levin Lab"
 engine: knitr
 format:
   html:
@@ -21,24 +21,32 @@ filters:
 nocite: '@*'
 ---
 
+```{r site-header, echo = FALSE, results = "asis"}
+logo_html <- paste(readLines("assets/logo.html", warn = FALSE), collapse = "")
+# Same navigation as index.qmd: the Photos link appears only when gallery/ has images
+has_gallery <- length(list.files("gallery", pattern = "\\.(jpe?g|png|webp|gif)$", ignore.case = TRUE)) > 0
+nav <- c(Research = "index.html#research", Publications = "publications.html", People = "index.html#people")
+if (has_gallery) nav <- c(nav, Photos = "index.html#photos")
+nav <- c(nav, Contact = "index.html#contact")
+current <- ifelse(names(nav) == "Publications", ' aria-current="page"', "")
+cat(
+  '\n```{=html}\n<header class="site">\n  <div class="wrap hdr">\n',
+  '    <a class="lab" href="index.html">', logo_html, '</a>\n',
+  '    <nav aria-label="Primary">',
+  paste0('<a href="', nav, '"', current, '>', names(nav), '</a>', collapse = ""),
+  '</nav>\n  </div>\n</header>\n```\n\n',
+  sep = ""
+)
+```
+
 ```{=html}
-<div class="bar">
-  <a class="mk" href="index.html"><b>◆</b>&nbsp; Levin&nbsp;Lab</a>
-  <nav>
-    <a href="index.html#research">Research</a>
-    <a href="index.html#highlights">Highlights</a>
-    <a href="publications.html" class="active">Publications</a>
-    <a href="index.html#contact">Contact</a>
-  </nav>
-</div>
+<main class="wrap">
+  <div class="page-head">
+    <h1>Publications</h1>
+    <p>Peer-reviewed publications and preprints.</p>
+  </div>
 
-<header class="page-head max">
-  <div class="eyebrow">Levin Lab — University of Pennsylvania</div>
-  <h1 class="page-title">Publications</h1>
-  <p class="page-sub">Complete list of peer-reviewed publications and preprints.</p>
-</header>
-
-<section class="pubs-list max">
+<section class="pubs-list">
 ```
 
 ::: {#refs}
@@ -46,6 +54,7 @@ nocite: '@*'
 
 ```{=html}
 </section>
+</main>
 ```
 
-<div class="page-footer"><a href="index.html">← Back to home</a><span>Last updated `{r} format(Sys.Date(), "%B %d, %Y")`</span></div>
+<div class="wrap foot"><a href="index.html">Home</a> · Last updated `{r} format(Sys.Date(), "%B %d, %Y")`</div>
