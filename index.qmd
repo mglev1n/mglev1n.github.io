@@ -8,7 +8,17 @@ format:
     include-in-header:
       - text: |
           <meta name="description" content="The Levin Lab at the University of Pennsylvania uses human genetics to identify therapeutic targets, predict cardiovascular risk, and bring both into clinical care." />
-          <meta name="twitter:card" content="summary" />
+          <!-- Link previews (Slack, LinkedIn, iMessage, X). Image: assets/social-card.png, 1200 x 630. -->
+          <meta property="og:type" content="website" />
+          <meta property="og:site_name" content="Levin Lab" />
+          <meta property="og:title" content="Levin Lab | Michael G. Levin, MD, University of Pennsylvania" />
+          <meta property="og:description" content="The Levin Lab at the University of Pennsylvania uses human genetics to identify therapeutic targets, predict cardiovascular risk, and bring both into clinical care." />
+          <meta property="og:url" content="https://www.levin-lab.org/" />
+          <meta property="og:image" content="https://www.levin-lab.org/assets/social-card.png" />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          <meta property="og:image:alt" content="Levin Lab wordmark. University of Pennsylvania and Philadelphia VA Medical Center." />
+          <meta name="twitter:card" content="summary_large_image" />
           <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
           <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
           <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
