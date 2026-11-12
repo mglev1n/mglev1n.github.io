@@ -153,9 +153,10 @@ section p + p { margin-top: 12px; }
 #refs-index .csl-entry a { word-break: break-word; }
 
 /* Each entry is three lines, built by lua/publication-entry.lua:
-     .pub-title    the title, which links to the paper
+     .pub-title    the title
      .pub-authors  the authors, with Levin's name in <strong>
-     .pub-venue    journal, year, volume, pages; on publications.html also the authorship note
+     .pub-venue    journal, year, volume, pages, and the DOI, which is the entry's link;
+                   on publications.html also the authorship note
    Only the title and Levin's name are in the body ink colour; the rest is grey.
    Every author is listed, so the author block can run to many lines: Levin's name is
    set heavy enough to find in it, and the small gaps keep the venue from reading as
@@ -168,12 +169,8 @@ section p + p { margin-top: 12px; }
 .pub-title,
 .pub-authors { text-wrap: pretty; }
 
-/* The title links to the paper. A page of underlined titles is heavy to read, so the
-   underline shows only under the pointer and on keyboard focus (with an outline). */
-.pub-title a { text-decoration-line: none; }
-.pub-title a:hover,
-.pub-title a:focus-visible { text-decoration-line: underline; text-decoration-color: var(--text); }
-.pub-title a:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+/* The DOI link takes the grey of its line; the underline marks it as a link. */
+.pub-venue a { color: inherit; }
 
 /* publications.html: citation numbers in a right-aligned gutter. The number sits inside
    .pub-title, so it has the title's size and shares its text baseline. */

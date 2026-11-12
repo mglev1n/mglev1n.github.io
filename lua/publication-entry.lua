@@ -5,9 +5,10 @@
 -- It turns one bibliography entry, as citeproc formats it, into the three lines
 -- the site shows:
 --
---   Title                      links to the DOI, or to the URL if there is no DOI
+--   Title
 --   Authors                    every author, with Levin's name emphasised
---   Journal. Year;Vol:Pages.   plus the authorship note on the publications page
+--   Journal. Year;Vol:Pages. doi:...   the DOI (or URL) is the entry's link; the
+--                              publications page adds the authorship note
 --
 -- How the parts are found: the citation style
 -- (templates/american-medical-association-no-et-al-v2.csl) puts a marker character
@@ -130,17 +131,6 @@ local function drop_closing(inlines, character)
     end
   end
   return inlines
-end
-
--- The address of the first link in a list of inlines, or nil.
-local function first_link_target(inlines)
-  local target = nil
-  inlines:walk({
-    Link = function(link)
-      target = target or link.target
-    end
-  })
-  return target
 end
 
 -- One line of an entry: <div class="..."> around the inlines.
@@ -282,15 +272,9 @@ function M.format(entry, options)
 
   local lines = pandoc.List({})
 
-  -- Line 1: the title. It links to the DOI, or to the URL when the style printed a
-  -- URL instead. Citeproc has already made that link in the DOI/URL part, so its
-  -- address is taken from there. With neither, the title is plain text. (A title
-  -- that already holds a link is left alone: a link cannot sit inside a link.)
+  -- Line 1: the title, as plain text. The entry's link is the DOI on line 3, which is
+  -- underlined like every other link on the site.
   local title = parts.title
-  local address = parts.access and first_link_target(parts.access)
-  if address and not first_link_target(title) then
-    title = pandoc.Inlines({pandoc.Link(title, address)})
-  end
   if options.show_number and #parts.number > 0 then
     -- The number goes inside the title line so that the two share a text baseline
     title:insert(1, pandoc.Space())
@@ -306,10 +290,27 @@ function M.format(entry, options)
     lines:insert(line("pub-authors", authors))
   end
 
-  -- Line 3: the venue, then the authorship note. The style prints the note in bold
-  -- italics; here it is plain text in a span, which styles.css sets in grey italics.
+  -- Line 3: the venue, then the DOI (or the URL, when the style printed one instead),
+  -- then the authorship note. The style prints the note in bold italics; here it is
+  -- plain text in a span, which styles.css sets in grey italics.
   local venue = parts.venue
-  if options.show_note and parts.note and #parts.note > 0 then
+  local with_note = options.show_note and parts.note and #parts.note > 0
+  if parts.access then
+    -- The style puts a period after the DOI only when a note follows. Take it off
+    -- here and put it back below if the note is shown, so that an entry without a
+    -- note, and every entry on the home page, ends at the DOI.
+    local access = drop_closing(trim(parts.access), ".")
+    if #access > 0 then
+      if #venue > 0 then
+        venue:insert(pandoc.Space())
+      end
+      venue:extend(access)
+      if with_note then
+        venue:insert(pandoc.Str("."))
+      end
+    end
+  end
+  if with_note then
     local note = parts.note:walk({
       Strong = function(strong) return strong.content end,
       Emph = function(emph) return emph.content end,
