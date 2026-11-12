@@ -12,6 +12,7 @@
   --link:   #111111;
   --link-underline: #999999;
   --serif:  "Newsreader", Georgia, serif;
+  --header-clearance: 64px;  /* room to leave for the sticky header: its height (61px) plus a little */
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -41,7 +42,20 @@ a:hover { text-decoration-color: var(--text); }
 .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
 
 /* ===== header ===== */
-.site { border-bottom: 1px solid var(--rule); }
+/* The header stays at the top of the window while the page scrolls (position: sticky).
+   The solid background stops the text that passes underneath from showing through, and
+   the z-index keeps the header in front of the page content. */
+.site {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--bg);
+  border-bottom: 1px solid var(--rule);
+}
+/* A link to a section (#research, index.html#people, ...) scrolls that section to the top
+   of the window, where the header would now cover its heading. scroll-margin-top makes the
+   browser stop short of the top by --header-clearance (set in :root above). Links in the
+   page get the same margin, so that a link reached with the Tab key is not left hidden
+   behind the header. */
+section, main a, .foot a { scroll-margin-top: var(--header-clearance); }
 .hdr {
   display: flex; justify-content: space-between; align-items: baseline;
   flex-wrap: wrap; gap: 8px 24px;
@@ -60,6 +74,27 @@ a:hover { text-decoration-color: var(--text); }
 .hdr nav a { text-decoration: none; }
 .hdr nav a:hover,
 .hdr nav a[aria-current="page"] { text-decoration: underline; }
+
+/* ----- home page: the wordmark shows in one place at a time -----
+   The home page has the wordmark large in the hero, so the small copy in the header stays
+   hidden until the large one has scrolled out of view. The script near the top of index.qmd
+   sets data-wordmark on <html> to say which of the two is showing:
+     data-wordmark="hero"    the large wordmark is on screen: hide the copy in the header
+     data-wordmark="header"  the large wordmark has scrolled away: show the copy in the header
+   publications.html has no such script, and neither does a browser with JavaScript turned
+   off. There data-wordmark is never set, none of these rules apply, and the header wordmark
+   is always visible. */
+
+/* Hidden, but still taking up its place in the row, so nothing moves when it appears.
+   visibility: hidden also takes the link out of keyboard focus and away from screen readers. */
+[data-wordmark="hero"] .lab { visibility: hidden; }
+
+/* A brief fade as the header wordmark appears; none for readers who ask for reduced motion. */
+[data-wordmark="header"] .lab { animation: wordmark-fade-in 0.15s linear; }
+@keyframes wordmark-fade-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  [data-wordmark="header"] .lab { animation: none; }
+}
 
 /* ===== hero ===== */
 .hero { padding: 64px 0 16px; }
@@ -154,4 +189,29 @@ section p + p { margin-top: 12px; }
   .hero .lede { font-size: 20px; }
   .person { grid-template-columns: 88px 1fr; gap: 16px; }
   .person img { width: 88px; }
+
+  /* Header in two rows: the wordmark on the first, the navigation on the second, 87px in
+     all. (flex-basis: 100% makes the navigation as wide as the header, so it cannot sit
+     beside the wordmark.) */
+  .hdr nav { flex-basis: 100%; }
+  :root { --header-clearance: 90px; }
+
+  /* Home page, large wordmark on screen: take the header wordmark's row away altogether,
+     so there is no empty row above the navigation. */
+  [data-wordmark="hero"] .lab { display: none; }
+
+  /* Home page, large wordmark scrolled away: the row comes back, which makes the header
+     28px taller (the 20px wordmark row plus the 8px gap below it). The header is stuck to
+     the top of the window by then, floating over the page. The negative margin hands those
+     28px back, so the page underneath stays exactly where it was and nothing jumps.
+     The row's height is fixed at 20px so that the sum holds even on a phone set to enlarge
+     text. If you change the wordmark size or the row gap, change these numbers to match. */
+  [data-wordmark] .lab { height: 20px; }
+  [data-wordmark="header"] .site { margin-bottom: calc(-1 * (20px + 8px)); }
+}
+
+/* Below 384px five navigation links no longer fit on one line (four links: below 323px).
+   They wrap onto a second line, which makes the header 115px tall with its wordmark. */
+@media (max-width: 383px) {
+  :root { --header-clearance: 118px; }
 }
