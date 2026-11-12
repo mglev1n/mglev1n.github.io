@@ -1,8 +1,14 @@
 -- first-senior-author-filter.lua
 -- Filters bibliography to show only publications where Levin is first or senior author
 -- Runs citeproc first with all citations, then filters the #refs div
+-- Each entry that is kept is then laid out in three lines (title, authors, venue)
 
 io.stderr:write("\n=== FIRST/SENIOR AUTHOR FILTER ===\n")
+
+-- lua/publication-entry.lua builds the three-line entry and holds the setting for
+-- shortening long author lists (MAX_AUTHORS). Both filters load it from the folder
+-- this file is in, much as source() does in R.
+local pub = dofile(pandoc.path.join({pandoc.path.directory(PANDOC_SCRIPT_FILE), "publication-entry.lua"}))
 
 local n_recent = 5  -- default
 
@@ -216,26 +222,6 @@ local function qualifies_for_inclusion(entry_div)
   return first or senior or equal, first, senior, equal
 end
 
--- Remove the authorship note from an entry's inlines, with the ". " that the CSL
--- puts before it, so the entry ends at the DOI like an entry that has no note.
--- Call this only after the entry has been selected: the equal-contribution check
--- above reads the note. The note is still shown on publications.html.
-local function drop_authorship_note(inlines)
-  for i = #inlines, 1, -1 do
-    if pandoc.utils.stringify(inlines[i]):match("^Authorship Note:") then
-      inlines:remove(i)
-      if inlines[i - 1] and inlines[i - 1].t == "Space" then
-        inlines:remove(i - 1)
-        if inlines[i - 2] and inlines[i - 2].t == "Str" and inlines[i - 2].text == "." then
-          inlines:remove(i - 2)
-        end
-      end
-      break
-    end
-  end
-  return inlines
-end
-
 -- Main processing function
 function Pandoc(doc)
   io.stderr:write("\nProcessing document...\n")
@@ -266,24 +252,30 @@ function Pandoc(doc)
 
   for _, block in ipairs(refs_div.content) do
     if block.t == "Div" and block.classes:includes("csl-entry") then
-      local qualifies, is_first, is_senior, is_equal = qualifies_for_inclusion(block)
+      -- The citation style puts marker characters in each entry (see
+      -- lua/publication-entry.lua). The checks below read the entry's text, so they
+      -- get a copy without the markers, which reads as one plain citation:
+      -- "12. Authors. Title. Journal. Year;Vol:Pages. doi:10.1/xyz. Authorship Note: ..."
+      local plain = pub.without_markers(block)
+      local qualifies, is_first, is_senior, is_equal = qualifies_for_inclusion(plain)
 
       if qualifies then
-        local year = extract_year(block.content)
+        local year = extract_year(plain.content)
         table.insert(qualifying_entries, {
           block = block,
+          plain = plain,
           year = year or 0,
           is_first = is_first,
           is_senior = is_senior,
           is_equal = is_equal
         })
 
-        local preview = pandoc.utils.stringify(block.content):sub(1, 80)
+        local preview = pandoc.utils.stringify(plain.content):sub(1, 80)
         io.stderr:write("  INCLUDED: " .. preview .. "... (year=" .. (year or "unknown") ..
                        ", first=" .. tostring(is_first) .. ", senior=" .. tostring(is_senior) ..
                        ", equal=" .. tostring(is_equal) .. ")\n")
       else
-        local preview = pandoc.utils.stringify(block.content):sub(1, 60)
+        local preview = pandoc.utils.stringify(plain.content):sub(1, 60)
         io.stderr:write("  EXCLUDED: " .. preview .. "...\n")
       end
     end
@@ -300,40 +292,28 @@ function Pandoc(doc)
   local keep_count = math.min(n_recent, #qualifying_entries)
   local new_content = {}
 
+  local shortened_count = 0
+  local one_paragraph_count = 0
+
   for i = 1, keep_count do
-    local entry = qualifying_entries[i].block
-
-    -- Renumber the entry: replace "XX. " at start with ""
-    local renumbered = false
-    entry.content = entry.content:walk({
-      Str = function(elem)
-        if not renumbered then
-          -- Check if this string starts with a number prefix
-          -- local new_text = elem.text:gsub("^%d+%.%s*", i .. ". ")
-          local new_text = elem.text:gsub("^%d+%.%s*", "")
-          if new_text ~= elem.text then
-            renumbered = true
-            return pandoc.Str(new_text)
-          end
-        end
-        return elem
-      end,
-    })
-
-    -- The home page does not show authorship notes
-    entry.content = entry.content:map(function(block)
-      if block.t == "Para" or block.t == "Plain" then
-        block.content = drop_authorship_note(block.content)
-      end
-      return block
-    end)
+    -- Lay the entry out in three lines: title, authors, venue. The home page shows
+    -- neither the citation number nor the authorship note. (The entry has already
+    -- been selected, so the equal-contribution check above has read the note.)
+    local entry, done = pub.format(qualifying_entries[i].block, {show_number = false, show_note = false})
+    if done.shortened then shortened_count = shortened_count + 1 end
+    if not done.three_lines then one_paragraph_count = one_paragraph_count + 1 end
 
     table.insert(new_content, entry)
-    local preview = pandoc.utils.stringify(entry.content):sub(1, 60)
+    local preview = pandoc.utils.stringify(qualifying_entries[i].plain.content):sub(1, 60)
     io.stderr:write("  KEEPING #" .. i .. ": " .. preview .. "... (year=" .. qualifying_entries[i].year .. ")\n")
   end
 
   io.stderr:write("\n=== Filtered to " .. keep_count .. " first/senior author publications ===\n")
+  io.stderr:write("Shortened " .. shortened_count .. " author lists\n")
+  if one_paragraph_count > 0 then
+    io.stderr:write("WARNING: " .. one_paragraph_count .. " entries have no part markers and are shown " ..
+                    "as one paragraph. Is the csl file templates/american-medical-association-no-et-al-v2.csl?\n")
+  end
 
   -- Replace the refs div by rebuilding doc.blocks (recursive to handle nesting)
   local refs_found = 0

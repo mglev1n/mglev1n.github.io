@@ -44,7 +44,9 @@
   <macro name="author">
     <group suffix=".">
       <names variable="author">
-        <name name-as-sort-order="all" sort-separator=" " initialize-with="" delimiter=", " delimiter-precedes-last="always"/>
+        <!-- &#xE001; in the delimiter is the marker between two author names; see the
+             note on part markers in the bibliography layout below. -->
+        <name name-as-sort-order="all" sort-separator=" " initialize-with="" delimiter=",&#xE001; " delimiter-precedes-last="always"/>
         <label form="short" prefix=", "/>
         <substitute>
           <names variable="editor"/>
@@ -127,9 +129,24 @@
       <key macro="author" names-min="2" names-use-first="1"/>
     </sort>
     <layout>
+      <!-- Part markers. The website shows each entry as three lines (title, authors,
+           venue), so the Lua filters must know where each part of the entry starts.
+           This layout marks the start of each part with a character that never occurs
+           in a reference (Unicode private-use characters, written &#xE000; and so on):
+             &#xE000;  authors start          &#xE003;  venue starts (journal, year, pages)
+             &#xE001;  next author name       &#xE004;  DOI or URL starts
+             &#xE002;  title starts           &#xE005;  note starts
+           lua/publication-entry.lua cuts the entry at the markers and removes them, so
+           they never reach the page. Without the markers the entry reads exactly as
+           before. If you add or move a part here, keep its marker with it. The markers
+           make this file fit for the website only: another program (Zotero, Word)
+           would print them as empty boxes. -->
       <text variable="citation-number" suffix=". "/>
+      <text value="&#xE000;"/>
       <text macro="author"/>
+      <text value="&#xE002;"/>
       <text macro="title" prefix=" " suffix="."/>
+      <text value="&#xE003;"/>
       <choose>
         <if type="bill book graphic legislation motion_picture report song" match="any">
           <group suffix="." prefix=" " delimiter=" ">
@@ -281,8 +298,8 @@
           </group>
         </else>
       </choose>
-      <text prefix=" " macro="access"/>
-      <text variable="note" font-style="italic" font-weight="bold" prefix=". "/>
+      <text prefix="&#xE004; " macro="access"/>
+      <text variable="note" font-style="italic" font-weight="bold" prefix=".&#xE005; "/>
     </layout>
   </bibliography>
 </style>
