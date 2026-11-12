@@ -24,6 +24,7 @@ body {
   font-family: var(--serif);
   font-size: 19px;
   line-height: 1.6;
+  overflow-wrap: break-word;  /* long unbroken strings (the contact email) wrap on narrow phones */
 }
 
 img { display: block; max-width: 100%; }
@@ -100,15 +101,27 @@ section p + p { margin-top: 12px; }
 .gallery figcaption { font-size: 14px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
 
 /* ===== publications (CSL output from the Lua filters) ===== */
-#refs, #refs-index { margin-top: 4px; }
+/* Pandoc's default stylesheet indents a .hanging-indent list twice, once on the list and
+   once on each entry. Reset both so entries start at the same left edge as the section text. */
+#refs, #refs-index { margin: 4px 0 0; text-indent: 0; }
 #refs .csl-entry,
 #refs-index .csl-entry {
+  margin-left: 0;
+  text-indent: 0;
   padding: 10px 0;
   font-size: 17px;
   line-height: 1.5;
 }
 #refs .csl-entry a,
 #refs-index .csl-entry a { word-break: break-word; }
+
+/* publications.html: citation numbers in a right-aligned gutter
+   (bibliography-processor.lua wraps each number in .csl-num) */
+#refs .csl-entry { position: relative; padding-left: 2.6em; }
+#refs .csl-num {
+  position: absolute; left: 0; width: 2.05em;
+  text-align: right; font-variant-numeric: tabular-nums;
+}
 
 /* year headings from bibliography-processor.lua */
 #refs h2, #refs h3 {
@@ -117,7 +130,9 @@ section p + p { margin-top: 12px; }
 }
 #refs h2:first-child, #refs h3:first-child { margin-top: 8px; }
 
-.authorship-note { color: var(--muted); font-style: italic; }
+/* The CSL wraps the note in <strong>; keep it at normal weight because the stylesheet
+   loads no bold italic, and the browser would otherwise synthesize one. */
+.authorship-note { color: var(--muted); font-style: italic; font-weight: 400; }
 .authorship-note-index { display: none; }
 
 .page-head { padding: 48px 0 8px; }
@@ -136,6 +151,7 @@ section p + p { margin-top: 12px; }
   .hero { padding-top: 40px; }
   .hero h1 { font-size: 38px; }
   .lab { font-size: 20px; }
+  .hdr nav { gap: 4px 16px; font-size: 15px; }  /* keeps all five links on one row at 390 px and wider */
   .hero .lede { font-size: 20px; }
   .person { grid-template-columns: 88px 1fr; gap: 16px; }
   .person img { width: 88px; }

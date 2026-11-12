@@ -220,6 +220,21 @@ function Pandoc(doc)
 
       total_highlighted = total_highlighted + entry_highlights
 
+      -- Move the leading citation number ("12.") into its own span so the
+      -- stylesheet can set the numbers in a gutter beside the entry text
+      local first_block = block.content[1]
+      if first_block and (first_block.t == "Para" or first_block.t == "Plain") then
+        local inlines = first_block.content
+        local first = inlines[1]
+        if first and first.t == "Str" and first.text:match("^%d+%.$") then
+          inlines[1] = pandoc.Span({first}, {class = "csl-num"})
+          if inlines[2] and inlines[2].t == "Space" then
+            inlines:remove(2)
+          end
+          first_block.content = inlines
+        end
+      end
+
       -- Add the entry
       table.insert(new_content, block)
     end
