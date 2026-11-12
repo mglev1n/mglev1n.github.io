@@ -46,7 +46,15 @@ a:hover { text-decoration-color: var(--text); }
   flex-wrap: wrap; gap: 8px 24px;
   padding-top: 18px; padding-bottom: 16px;
 }
-.lab { font-weight: 600; font-size: 19px; text-decoration: none; }
+.lab { font-weight: 500; font-size: 22px; line-height: 1; text-decoration: none; }
+
+/* Logo: Newsreader capitals with two drawn letters, the chromosome I and the coronary-tree A
+   (assets/logo.html). The drawn letters are inline SVGs sized to the capital height. */
+.logo { white-space: nowrap; letter-spacing: 0.08em; font-weight: 500; }
+.logo-glyph {
+  display: inline-block; height: 0.66em; width: auto;
+  vertical-align: baseline; margin: 0 0.1em 0 0.02em; overflow: visible;
+}
 .hdr nav { display: flex; flex-wrap: wrap; gap: 4px 20px; font-size: 16px; }
 .hdr nav a { text-decoration: none; }
 .hdr nav a:hover,
@@ -54,7 +62,7 @@ a:hover { text-decoration-color: var(--text); }
 
 /* ===== hero ===== */
 .hero { padding: 64px 0 16px; }
-.hero h1 { font-weight: 500; font-size: 46px; line-height: 1.1; }
+.hero h1 { font-weight: 500; font-size: 56px; line-height: 1.1; }
 .hero .lede { font-size: 23px; line-height: 1.45; margin-top: 18px; max-width: 32em; }
 .aff { color: var(--muted); font-size: 16px; }
 .hero .aff { margin-top: 14px; }
@@ -126,7 +134,8 @@ section p + p { margin-top: 12px; }
 @media (max-width: 600px) {
   body { font-size: 18px; }
   .hero { padding-top: 40px; }
-  .hero h1 { font-size: 36px; }
+  .hero h1 { font-size: 38px; }
+  .lab { font-size: 20px; }
   .hero .lede { font-size: 20px; }
   .person { grid-template-columns: 88px 1fr; gap: 16px; }
   .person img { width: 88px; }

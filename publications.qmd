@@ -21,10 +21,13 @@ filters:
 nocite: '@*'
 ---
 
+```{r site-logo, echo = FALSE, results = "asis"}
+logo_html <- paste(readLines("assets/logo.html", warn = FALSE), collapse = "")
+cat('\n```{=html}\n<header class="site">\n  <div class="wrap hdr">\n    <a class="lab" href="index.html">',
+    logo_html, '</a>\n```\n\n', sep = "")
+```
+
 ```{=html}
-<header class="site">
-  <div class="wrap hdr">
-    <a class="lab" href="index.html">Levin Lab</a>
     <nav aria-label="Primary"><a href="index.html#research">Research</a><a href="publications.html" aria-current="page">Publications</a><a href="index.html#people">People</a><a href="index.html#contact">Contact</a></nav>
   </div>
 </header>

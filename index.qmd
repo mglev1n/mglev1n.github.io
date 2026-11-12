@@ -303,19 +303,19 @@ raw_html <- function(...) cat("\n```{=html}\n", ..., "\n```\n\n", sep = "")
 nav <- c(Research = "#research", Publications = "publications.html", People = "#people")
 if (has_gallery) nav <- c(nav, Photos = "#photos")
 nav <- c(nav, Contact = "#contact")
+logo_html <- paste(readLines("assets/logo.html", warn = FALSE), collapse = "")
 raw_html(
   '<header class="site">\n  <div class="wrap hdr">\n',
-  '    <a class="lab" href="index.html">Levin Lab</a>\n',
+  '    <a class="lab" href="index.html">', logo_html, '</a>\n',
   '    <nav aria-label="Primary">',
   paste0('<a href="', nav, '">', names(nav), '</a>', collapse = ""),
-  '</nav>\n  </div>\n</header>'
+  '</nav>\n  </div>\n</header>\n\n',
+  '<main class="wrap" id="top">\n  <div class="hero">\n',
+  '    <h1>', logo_html, '</h1>'
 )
 ```
 
 ```{=html}
-<main class="wrap" id="top">
-  <div class="hero">
-    <h1>Levin Lab</h1>
     <p class="lede">We use human genetics and bioinformatics to identify therapeutic targets, predict cardiovascular risk, and bring both into clinical care.</p>
     <p class="aff">University of Pennsylvania · Philadelphia VA Medical Center</p>
   </div>
