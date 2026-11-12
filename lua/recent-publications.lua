@@ -38,45 +38,6 @@ local function get_refs_div(doc)
   return refs_div
 end
 
--- Extract year from a formatted citation entry - multiple patterns for maximum flexibility
-local function extract_year(blocks)
-  local text = pandoc.utils.stringify(blocks)
-
-  -- Try multiple patterns in order of specificity
-  local patterns = {
-    -- Traditional formats with volume/issue
-    "%.%s*(%d%d%d%d);",           -- . 2025;14(23)
-    "%.%s*(%d%d%d%d):",           -- . 2025:347
-
-    -- Online-first / no volume formats
-    "%.%s*(%d%d%d%d)%.:e",        -- . 2025.:e038921 (article ID)
-    "%.%s*(%d%d%d%d)%.%s+doi:",   -- . 2025. doi:
-    "%.%s*(%d%d%d%d)%.%s+http",   -- . 2025. http (URL follows)
-
-    -- General formats
-    "%.%s*(%d%d%d%d)%.",          -- . 2025.
-    ",?%s*(%d%d%d%d)%.",          -- , 2025. or 2025.
-    "%((%d%d%d%d)%)",             -- (2025)
-
-    -- Fallback: any 4-digit number that could be a year
-    -- This will match standalone years in various contexts
-    "[^%d](%d%d%d%d)[^%d]",       -- Any 4 digits not adjacent to other digits
-  }
-
-  for _, pattern in ipairs(patterns) do
-    local year = text:match(pattern)
-    if year then
-      local y = tonumber(year)
-      -- Sanity check: year should be reasonable
-      if y >= 1900 and y <= 2100 then
-        return y
-      end
-    end
-  end
-
-  return nil
-end
-
 -- Does the authorship note say that Levin shares first or senior authorship?
 -- The note must use sharing language (equal contribution, joint supervision) and
 -- must itself name Levin, by initials (MGL, ML) or by surname. %f[%a] and %f[%A]
@@ -160,14 +121,16 @@ function Pandoc(doc)
     if block.t == "Div" and block.classes:includes("csl-entry") then
       -- The citation style puts marker characters in each entry (see
       -- lua/publication-entry.lua). The authorship check uses them to read the author
-      -- names. The year is read from the entry's text, so it gets a copy without the
-      -- markers, which reads as one plain citation:
+      -- names. The log lines below print the entry's text, so they get a copy without
+      -- the markers, which reads as one plain citation:
       -- "12. Authors. Title. Journal. Year;Vol:Pages. doi:10.1/xyz. Authorship Note: ..."
       local plain = pub.without_markers(block)
       local qualifies, is_first, is_senior, is_equal = qualifies_for_inclusion(block)
 
       if qualifies then
-        local year = extract_year(plain.content)
+        -- The year comes from the reference's date field. An entry with no date
+        -- gets year 0 below, so it sorts last and is never shown as recent.
+        local year = pub.year_of(block)
         table.insert(qualifying_entries, {
           block = block,
           plain = plain,

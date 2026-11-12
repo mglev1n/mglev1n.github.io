@@ -19,6 +19,46 @@ format:
           <meta property="og:image:height" content="630" />
           <meta property="og:image:alt" content="Levin Lab wordmark. University of Pennsylvania and Philadelphia VA Medical Center." />
           <meta name="twitter:card" content="summary_large_image" />
+          <!-- Structured data: tells search engines that this is a research group at Penn and who
+               leads it. Keep the title and links in step with the People and Contact sections. -->
+          <script type="application/ld+json">
+          {
+            "@context": "https://schema.org",
+            "@type": "ResearchOrganization",
+            "name": "Levin Lab",
+            "url": "https://www.levin-lab.org/",
+            "logo": "https://www.levin-lab.org/assets/logo.png",
+            "description": "The Levin Lab at the University of Pennsylvania uses human genetics to identify therapeutic targets, predict cardiovascular risk, and bring both into clinical care.",
+            "parentOrganization": {
+              "@type": "CollegeOrUniversity",
+              "name": "University of Pennsylvania",
+              "url": "https://www.upenn.edu/"
+            },
+            "member": {
+              "@type": "Person",
+              "name": "Michael G. Levin",
+              "honorificSuffix": "MD, MSTR",
+              "jobTitle": "Assistant Professor of Medicine and Genetics",
+              "affiliation": [
+                {
+                  "@type": "CollegeOrUniversity",
+                  "name": "University of Pennsylvania"
+                },
+                {
+                  "@type": "Hospital",
+                  "name": "Philadelphia VA Medical Center"
+                }
+              ],
+              "email": "mailto:Michael.Levin@pennmedicine.upenn.edu",
+              "sameAs": [
+                "https://orcid.org/0000-0002-9937-9932",
+                "https://scholar.google.com/citations?user=PLif7ksAAAAJ",
+                "https://github.com/mglev1n",
+                "https://www.linkedin.com/in/michael-levin-29268571/"
+              ]
+            }
+          }
+          </script>
           <!-- "?v=2" changes the address of each icon without changing the file. Browsers keep a
                favicon for a long time under its address, so raise the number whenever the icons change. -->
           <link rel="icon" href="assets/favicon.svg?v=2" type="image/svg+xml">
@@ -407,6 +447,27 @@ entry_lines <- entry_lines[!grepl("^@(comment|string|preamble)", entry_lines, ig
 bib_keys <- sub("^@[A-Za-z]+\\{\\s*([^,[:space:]]+).*$", "\\1", entry_lines)
 n_publications <- length(unique(bib_keys))
 stopifnot(n_publications > 0)
+
+# Guard against a partial download from Zotero. The count is compared with the one on
+# the live site. If more than a tenth of the entries are gone, the build stops and the
+# site keeps its last good version. To publish a list that really is that much shorter,
+# run the workflow by hand with "Allow a much shorter publication list" ticked, which
+# sets ALLOW_COUNT_DROP=true.
+live_count <- tryCatch({
+  live_page <- suppressWarnings(readLines("https://www.levin-lab.org/", warn = FALSE))
+  hit <- grep("has published [0-9]+ papers", live_page, value = TRUE)[1]
+  as.integer(sub(".*has published ([0-9]+) papers.*", "\\1", hit))
+}, error = function(e) NA_integer_)
+if (is.na(live_count)) {
+  message("Could not read the publication count from the live site; skipping the partial-download check.")
+} else if (n_publications < 0.9 * live_count && !identical(Sys.getenv("ALLOW_COUNT_DROP"), "true")) {
+  stop(
+    "The bibliography has ", n_publications, " entries, but the live site lists ", live_count,
+    ". This looks like a partial download from Zotero, so the build has stopped. ",
+    "If the shorter list is intended, run the workflow by hand with ",
+    "\"Allow a much shorter publication list\" ticked."
+  )
+}
 raw_html(
   '  <section id="publications">\n    <h2>Publications</h2>\n',
   '    <p>The lab has published ', n_publications, ' papers and preprints, including work in ',
