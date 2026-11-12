@@ -336,7 +336,7 @@ raw_html(
       <div>
         <p class="pn">Michael G. Levin, MD, MSTR</p>
         <p class="pr">Principal Investigator</p>
-        <p class="aff">Assistant Professor of Medicine, University of Pennsylvania<br>Staff Cardiologist, Philadelphia VA Medical Center</p>
+        <p class="aff">Assistant Professor of Medicine and Genetics, University of Pennsylvania<br>Staff Cardiologist, Philadelphia VA Medical Center</p>
       </div>
     </div>
   </section>
