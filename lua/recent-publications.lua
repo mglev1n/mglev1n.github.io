@@ -12,8 +12,36 @@ local levin_patterns = {
   "Levin M,", "Levin M.", "MG Levin", "M Levin"
 }
 
+-- Mark preprints so that the CSL can print their server ("medRxiv. Preprint. 2026.").
+-- Zotero exports a preprint to BibTeX as @misc with the server name as publisher.
+-- Pandoc reads that as a reference with no type and no journal, so the CSL has no
+-- venue to print and cannot tell the entry from any other untyped one. A preprint
+-- is recognised here by a server name containing "rxiv" (medRxiv, bioRxiv, arXiv)
+-- in its publisher or journal. It goes to citeproc as CSL type "article", with the
+-- bare server name as publisher. References in the metadata take precedence over
+-- bibliography entries with the same id, so all other entries still come straight
+-- from the bibliography file.
+-- lua/bibliography-processor.lua has the same function: change both together.
+local function retype_preprints(doc)
+  local preprints = pandoc.List()
+  for _, ref in ipairs(pandoc.utils.references(doc)) do
+    local venue = pandoc.utils.stringify(ref.publisher or "") .. " " ..
+                  pandoc.utils.stringify(ref["container-title"] or "")
+    local server = venue:match("%a*[Rr][Xx][Ii][Vv]%a*")
+    if server then
+      ref.type = "article"
+      ref.publisher = server
+      preprints:insert(ref)
+    end
+  end
+  io.stderr:write("Retyped " .. #preprints .. " preprints\n")
+  doc.meta.references = preprints
+  return doc
+end
+
 -- Run citeproc on a document
 local function run_citeproc(doc)
+  doc = retype_preprints(doc)
   io.stderr:write("Running citeproc...\n")
   if PANDOC_VERSION >= '2.19.1' then
     return pandoc.utils.citeproc(doc)
