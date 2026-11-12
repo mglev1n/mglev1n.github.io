@@ -212,6 +212,31 @@ local function is_levin(name)
   return IS_LEVIN[stringify(name)] == true
 end
 
+-- True if a name, as the citation style prints it, is exactly one of LEVIN_NAMES.
+-- "Levine RA" is not: the whole name is compared, not its first letters.
+function M.is_levin(name)
+  return IS_LEVIN[name] == true
+end
+
+-- The author names of an entry, each as one string and in order, and the text of
+-- its authorship note (nil if it has none). Returns nil if the entry has no markers.
+-- The home page uses this to decide whether Levin is the first or last author.
+function M.authors_and_note(entry)
+  local parts = split_entry(entry)
+  if not parts then
+    return nil
+  end
+  local names = {}
+  for _, name in ipairs(parts.names) do
+    table.insert(names, stringify(name))
+  end
+  local note = parts.note and stringify(parts.note) or nil
+  if note == "" then
+    note = nil
+  end
+  return names, note
+end
+
 -- Returns the inlines of the author line: every name, with ", " between names
 -- as the citation style has it, and Levin's name in <strong>. Also returns true
 -- if Levin's name was found.
@@ -348,13 +373,21 @@ local INSTITUTION_SPELLING = {
 }
 
 local function ends_with_institution_word(name)
-  local last_word = name:lower():match("(%a+)%s*$")
+  -- the last word of the name, ignoring anything after it that is not a letter
+  local last_word = name:lower():match("(%a+)%A*$")
   for _, word in ipairs(INSTITUTION_WORDS) do
     if last_word == word then
       return true
     end
   end
   return false
+end
+
+-- True if a name, as the citation style prints it, is an institution. A person is
+-- printed as surname and initials ("Levin MG"), so a person's name ends with initials
+-- and never with one of the institution words.
+function M.is_institution(name)
+  return ends_with_institution_word(name)
 end
 
 -- Returns the author as a single institution name ("Penn Medicine BioBank"), or nil

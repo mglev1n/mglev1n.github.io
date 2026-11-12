@@ -12,12 +12,6 @@ local pub = dofile(pandoc.path.join({pandoc.path.directory(PANDOC_SCRIPT_FILE), 
 
 local n_recent = 5  -- default
 
--- Levin name patterns for matching in formatted citations
-local levin_patterns = {
-  "Levin MG", "Levin M", "Levin", "Levin MG,", "Levin MG.",
-  "Levin M,", "Levin M.", "MG Levin", "M Levin"
-}
-
 -- Run citeproc on a document
 local function run_citeproc(doc)
   doc = pub.prepare_references(doc)  -- preprints, institution names
@@ -83,118 +77,53 @@ local function extract_year(blocks)
   return nil
 end
 
--- Check if Levin is first author in formatted citation
-local function is_first_author(text)
-  -- Skip citation number if present (e.g., "22. ")
-  local text_without_number = text:gsub("^%d+%.%s*", "")
-
-  -- First author appears at the start, before the first comma
-  local first_author_section = text_without_number:match("^([^,]+),")
-  if not first_author_section then
-    -- Try without comma (single author case)
-    first_author_section = text_without_number:match("^([^%.]+)%.")
-  end
-
-  if first_author_section then
-    for _, pattern in ipairs(levin_patterns) do
-      if first_author_section:match(pattern) then
-        io.stderr:write("  First author match: " .. first_author_section .. "\n")
-        return true
-      end
-    end
-  end
-
-  return false
-end
-
--- Check if Levin is senior (last) author in formatted citation
-local function is_senior_author(text)
-  -- Skip citation number if present
-  local text_without_number = text:gsub("^%d+%.%s*", "")
-
-  -- Senior author is the LAST author (before title/period)
-  -- Extract the author section (everything before first period after authors)
-  local author_section = text_without_number:match("^([^%.]+)%.")
-  if not author_section then
+-- Does the authorship note say that Levin shares first or senior authorship?
+-- The note must use sharing language (equal contribution, joint supervision) and
+-- must itself name Levin, by initials (MGL, ML) or by surname. %f[%a] and %f[%A]
+-- mark the start and end of a word, so "ML" does not match inside "MLK" and "Levin"
+-- does not match "Levine".
+local function shares_first_or_senior(note)
+  if not note then
     return false
   end
-
-  -- Count commas to determine number of authors
-  local _, comma_count = author_section:gsub(",", "")
-
-  -- If no commas = single author, so first = senior
-  if comma_count == 0 then
-    return is_first_author(text)
-  end
-
-  -- For multiple authors (1+ commas), find the last author
-  local last_author = author_section:match(",%s*([^,]+)$")
-  if last_author then
-    for _, pattern in ipairs(levin_patterns) do
-      if last_author:match(pattern) then
-        io.stderr:write("  Senior author match: " .. last_author .. "\n")
-        return true
-      end
-    end
-  end
-
-  return false
-end
-
--- Check authorship note for equal contribution
-local function has_equal_contribution_note(text)
-  -- Check for language that marks shared first or senior authorship: equal
-  -- contribution, or joint supervision ("MGL and SMD jointly supervised")
-  local has_equal_language = text:match("[Cc]ontributed equally") or
-                             text:match("[Ee]qual contribution") or
-                             text:match("co%-first") or
-                             text:match("co%-senior") or
-                             text:match("[Jj]ointly supervis") or
-                             text:match("[Cc]o%-supervis") or
-                             text:match("[Jj]ointly directed")
-
-  if not has_equal_language then
+  local sharing = note:match("[Cc]ontributed equally") or
+                  note:match("[Ee]qual contribution") or
+                  note:match("[Cc]o%-first") or
+                  note:match("[Cc]o%-senior") or
+                  note:match("[Jj]ointly supervis") or
+                  note:match("[Cc]o%-supervis") or
+                  note:match("[Jj]ointly directed")
+  if not sharing then
     return false
   end
-
-  -- Check if Levin (or initials) is mentioned in the note
-  -- Look for: ML, MG, M Levin, Levin M, Levin MG, etc.
-  local levin_initials = {
-    "ML[^a-z]", "MG[^a-z]", "M Levin", "Levin M", "Levin MG", "MG Levin"
-  }
-
-  for _, pattern in ipairs(levin_initials) do
-    if text:match(pattern) then
-      io.stderr:write("  Equal contribution note found with Levin mention\n")
-      return true
-    end
-  end
-
-  -- Also check for full patterns from before
-  local patterns = {
-    "Equal contribution as first",
-    "equal contribution as first",
-    "Equal contribution as senior",
-    "equal contribution as senior"
-  }
-
-  for _, pattern in ipairs(patterns) do
-    if text:match(pattern) then
-      io.stderr:write("  Equal contribution note found\n")
-      return true
-    end
-  end
-
-  return false
+  local names_levin = note:match("%f[%a]MGL%f[%A]") or
+                      note:match("%f[%a]ML%f[%A]") or
+                      note:match("%f[%a]Levin%f[%A]")
+  return names_levin ~= nil
 end
 
--- Determine if entry qualifies (first or senior author)
+-- Decide whether an entry belongs on the home page: Levin is the first author, the
+-- last author (the last person, when institutions follow), or shares one of those
+-- roles according to the authorship note.
+-- The author names come from the entry's markers (lua/publication-entry.lua), one
+-- whole name at a time, and each is compared with Levin's name exactly. An entry
+-- without markers cannot be judged and is left out.
 local function qualifies_for_inclusion(entry_div)
-  local text = pandoc.utils.stringify(entry_div.content)
+  local names, note = pub.authors_and_note(entry_div)
+  if not names or #names == 0 then
+    return false, false, false, false
+  end
 
-  local first = is_first_author(text)
-  local senior = is_senior_author(text)
-  local equal = has_equal_contribution_note(text)
+  local first = pub.is_levin(names[1])
+
+  -- The last author is the last person: institutions listed after the people
+  -- ("..., Levin MG, Penn Medicine BioBank") are not counted.
+  local last = #names
+  while last > 1 and pub.is_institution(names[last]) do
+    last = last - 1
+  end
+  local senior = pub.is_levin(names[last])
+  local equal = shares_first_or_senior(note)
 
   return first or senior or equal, first, senior, equal
 end
@@ -230,11 +159,12 @@ function Pandoc(doc)
   for _, block in ipairs(refs_div.content) do
     if block.t == "Div" and block.classes:includes("csl-entry") then
       -- The citation style puts marker characters in each entry (see
-      -- lua/publication-entry.lua). The checks below read the entry's text, so they
-      -- get a copy without the markers, which reads as one plain citation:
+      -- lua/publication-entry.lua). The authorship check uses them to read the author
+      -- names. The year is read from the entry's text, so it gets a copy without the
+      -- markers, which reads as one plain citation:
       -- "12. Authors. Title. Journal. Year;Vol:Pages. doi:10.1/xyz. Authorship Note: ..."
       local plain = pub.without_markers(block)
-      local qualifies, is_first, is_senior, is_equal = qualifies_for_inclusion(plain)
+      local qualifies, is_first, is_senior, is_equal = qualifies_for_inclusion(block)
 
       if qualifies then
         local year = extract_year(plain.content)
