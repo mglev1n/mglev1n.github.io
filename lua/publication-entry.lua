@@ -373,13 +373,21 @@ local INSTITUTION_SPELLING = {
 }
 
 local function ends_with_institution_word(name)
-  local last_word = name:lower():match("(%a+)%s*$")
+  -- the last word of the name, ignoring anything after it that is not a letter
+  local last_word = name:lower():match("(%a+)%A*$")
   for _, word in ipairs(INSTITUTION_WORDS) do
     if last_word == word then
       return true
     end
   end
   return false
+end
+
+-- True if a name, as the citation style prints it, is an institution. A person is
+-- printed as surname and initials ("Levin MG"), so a person's name ends with initials
+-- and never with one of the institution words.
+function M.is_institution(name)
+  return ends_with_institution_word(name)
 end
 
 -- Returns the author as a single institution name ("Penn Medicine BioBank"), or nil

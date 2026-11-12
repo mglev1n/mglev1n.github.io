@@ -103,7 +103,8 @@ local function shares_first_or_senior(note)
 end
 
 -- Decide whether an entry belongs on the home page: Levin is the first author, the
--- last author, or shares one of those roles according to the authorship note.
+-- last author (the last person, when institutions follow), or shares one of those
+-- roles according to the authorship note.
 -- The author names come from the entry's markers (lua/publication-entry.lua), one
 -- whole name at a time, and each is compared with Levin's name exactly. An entry
 -- without markers cannot be judged and is left out.
@@ -114,7 +115,14 @@ local function qualifies_for_inclusion(entry_div)
   end
 
   local first = pub.is_levin(names[1])
-  local senior = pub.is_levin(names[#names])
+
+  -- The last author is the last person: institutions listed after the people
+  -- ("..., Levin MG, Penn Medicine BioBank") are not counted.
+  local last = #names
+  while last > 1 and pub.is_institution(names[last]) do
+    last = last - 1
+  end
+  local senior = pub.is_levin(names[last])
   local equal = shares_first_or_senior(note)
 
   return first or senior or equal, first, senior, equal
