@@ -2,6 +2,10 @@
 -- Shared by recent-publications.lua (home page) and bibliography-processor.lua
 -- (publications page). It is not a filter itself: the two filters load it.
 --
+-- It does two jobs. Before citeproc runs, M.prepare_references corrects two things
+-- in the bibliography data (preprints and institutions entered as people; see the
+-- end of this file). After citeproc runs, M.format lays out each entry.
+--
 -- It turns one bibliography entry, as citeproc formats it, into the three lines
 -- the site shows:
 --
@@ -325,6 +329,113 @@ function M.format(entry, options)
   end
 
   return pandoc.Div(lines, entry.attr), { three_lines = true, levin = levin }
+end
+
+-- ===== Preparing the references, before citeproc formats them ===================
+
+-- An author whose family name ends with one of these words is an institution that
+-- was entered in Zotero as a person, with the name split into "last" and "first"
+-- ("BioBank" and "Penn Medicine"). The citation style would print it as a surname
+-- with initials: "BioBank PM".
+local INSTITUTION_WORDS = {
+  "biobank", "program", "center", "centre", "consortium", "initiative",
+  "group", "team", "network", "collaboration", "investigators",
+}
+
+-- An institution whose spelling varies in the data, and the spelling to print
+local INSTITUTION_SPELLING = {
+  ["penn medicine biobank"] = "Penn Medicine BioBank",
+}
+
+local function ends_with_institution_word(name)
+  local last_word = name:lower():match("(%a+)%s*$")
+  for _, word in ipairs(INSTITUTION_WORDS) do
+    if last_word == word then
+      return true
+    end
+  end
+  return false
+end
+
+-- Returns the author as a single institution name ("Penn Medicine BioBank"), or nil
+-- if the author is a person or is already right.
+local function as_institution(author)
+  local family = author.family and stringify(author.family) or ""
+  local given = author.given and stringify(author.given) or ""
+  local literal = author.literal and stringify(author.literal) or ""
+
+  local name
+  if family ~= "" and given ~= "" then
+    if not ends_with_institution_word(family) then
+      return nil  -- a person
+    end
+    name = given .. " " .. family
+  elseif family ~= "" then
+    name = family
+  elseif literal ~= "" then
+    name = literal
+  else
+    return nil
+  end
+
+  local spelled = INSTITUTION_SPELLING[name:lower()] or name
+  if given == "" and spelled == name then
+    return nil  -- one name, already spelled as it should be
+  end
+  return { literal = spelled }
+end
+
+-- Corrects the bibliography data before citeproc formats it. Call it on the
+-- document just before citeproc.
+--
+--   Preprints. Zotero exports a preprint to BibTeX as @misc with the server name as
+--   publisher. Pandoc reads that as a reference with no type and no journal, so the
+--   citation style has no venue to print. A preprint is recognised by a server name
+--   containing "rxiv" (medRxiv, bioRxiv, arXiv) in its publisher or journal. It goes
+--   to citeproc as type "article" with the bare server name as publisher, and the
+--   style prints "medRxiv. Preprint. 2026."
+--
+--   Institutions entered as people (see INSTITUTION_WORDS above) become one name.
+--
+-- Only the corrected references are handed back, in the document's metadata. There
+-- they take precedence over the bibliography entries with the same id, so every
+-- other entry still comes straight from the bibliography file.
+function M.prepare_references(doc)
+  local corrected = pandoc.List()
+  local preprints, institutions = 0, 0
+
+  for _, ref in ipairs(pandoc.utils.references(doc)) do
+    local changed = false
+
+    local venue = stringify(ref.publisher or "") .. " " .. stringify(ref["container-title"] or "")
+    local server = venue:match("%a*[Rr][Xx][Ii][Vv]%a*")
+    if server then
+      ref.type = "article"
+      ref.publisher = server
+      preprints = preprints + 1
+      changed = true
+    end
+
+    if type(ref.author) == "table" then
+      for i, author in ipairs(ref.author) do
+        local institution = type(author) == "table" and as_institution(author)
+        if institution then
+          ref.author[i] = institution
+          institutions = institutions + 1
+          changed = true
+        end
+      end
+    end
+
+    if changed then
+      corrected:insert(ref)
+    end
+  end
+
+  io.stderr:write("Retyped " .. preprints .. " preprints; corrected " .. institutions ..
+                  " institution names\n")
+  doc.meta.references = corrected
+  return doc
 end
 
 return M
