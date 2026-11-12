@@ -1,0 +1,50 @@
+---
+title: "Page not found"
+pagetitle: "Page not found | Levin Lab"
+engine: knitr
+format:
+  html:
+    minimal: true
+    theme: none
+    css: styles.css
+    include-in-header:
+      - text: |
+          <!-- GitHub Pages shows this page for any address that does not exist, for example
+               /a/b/c. The base tag makes every relative address on the page (styles.css,
+               assets/..., index.html) resolve from the top of the site, wherever it is shown. -->
+          <base href="/">
+          <meta name="robots" content="noindex">
+          <link rel="icon" href="assets/favicon.svg?v=2" type="image/svg+xml">
+          <link rel="icon" href="assets/favicon-32.png?v=2" type="image/png" sizes="32x32">
+          <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=2">
+---
+
+```{r site-header, echo = FALSE, results = "asis"}
+logo_html <- paste(readLines("assets/logo.html", warn = FALSE), collapse = "")
+# Same header and navigation as publications.qmd: the Photos link appears only when gallery/ has images
+has_gallery <- length(list.files("gallery", pattern = "\\.(jpe?g|png|webp|gif)$", ignore.case = TRUE)) > 0
+nav <- c(Research = "index.html#research", Publications = "publications.html", People = "index.html#people")
+if (has_gallery) nav <- c(nav, Photos = "index.html#photos")
+nav <- c(nav, Contact = "index.html#contact")
+cat(
+  '\n```{=html}\n<header class="site">\n  <div class="wrap hdr">\n',
+  '    <a class="lab" href="index.html">', logo_html, '</a>\n',
+  '    <nav aria-label="Primary">',
+  paste0('<a href="', nav, '">', names(nav), '</a>', collapse = ""),
+  '</nav>\n  </div>\n</header>\n```\n\n',
+  sep = ""
+)
+```
+
+```{=html}
+<main class="wrap">
+  <div class="page-head">
+    <h1>Page not found</h1>
+    <p>There is no page at this address. It may have been moved or renamed.</p>
+  </div>
+
+  <section>
+    <p>Go to the <a href="index.html">home page</a> or the <a href="publications.html">list of publications</a>.</p>
+  </section>
+</main>
+```
