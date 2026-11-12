@@ -57,4 +57,4 @@ cat(
 </main>
 ```
 
-<div class="wrap foot"><a href="index.html">Home</a> · Last updated `{r} format(Sys.Date(), "%B %d, %Y")`</div>
+<div class="wrap foot"><a href="index.html">Home</a> · Publications updated `{r} sub(" 0", " ", format(Sys.Date(), "%B %d, %Y"), fixed = TRUE)`</div>

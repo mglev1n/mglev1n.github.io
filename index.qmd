@@ -322,16 +322,10 @@ raw_html(
 
   <section id="research">
     <h2>Research</h2>
-    <p><strong>Drug target identification and validation.</strong> We run large-scale genetic discovery across common and rare variants, then use fine-mapping, colocalization, and Mendelian randomization to nominate candidate genes and test whether they play a causal role in disease.</p>
-    <p><strong>Cardiovascular risk prediction.</strong> We build, benchmark, and clinically evaluate polygenic risk scores in deeply phenotyped biobank and clinical cohorts.</p>
-    <p><strong>Clinical translation.</strong> We run genetically informed clinical trials and mechanistic clinical studies to test what genetic findings imply about human biology.</p>
+    <p><strong>Drug target identification and validation.</strong> Which genes cause cardiovascular disease, and which of them are promising drug targets? We run large-scale genetic discovery across common and rare variants, then use fine-mapping, colocalization, and Mendelian randomization to nominate candidate genes and test whether they play a causal role in disease.</p>
+    <p><strong>Cardiovascular risk prediction.</strong> How well can genetics predict a person&rsquo;s cardiovascular risk, and when is that prediction reliable enough to guide care? We build, benchmark, and clinically evaluate polygenic risk scores in deeply phenotyped biobank and clinical cohorts.</p>
+    <p><strong>Clinical translation.</strong> Do treatments act in patients the way human genetics predicts? We run genetically informed clinical trials and mechanistic clinical studies to test what genetic findings imply about human biology, such as a <a href="https://clinicaltrials.gov/study/NCT06212271">mechanistic trial of colchicine in peripheral artery disease</a>.</p>
     <p>Our work draws on the <a href="https://www.mvp.va.gov/pwa/">Million Veteran Program</a>, <a href="https://pmbb.med.upenn.edu/">Penn Medicine BioBank</a>, <a href="https://www.ukbiobank.ac.uk/">UK Biobank</a>, and <a href="https://allofus.nih.gov/">All of Us</a>, with a focus on atherosclerosis, lipoproteins including lipoprotein(a), and heart failure and cardiomyopathy.</p>
-  </section>
-
-  <section id="findings">
-    <h2>Selected findings</h2>
-    <p>A missense variant in <i>IL6R</i> protects against peripheral artery disease (<i>Circulation Research</i>, 2021). The finding nominated a therapeutic target, which our ongoing clinical trial of colchicine in peripheral artery disease now tests.</p>
-    <p>Widely used polygenic risk scores for coronary heart disease give discordant risk estimates for the same individual (<i>JAMA</i>, 2025). That discordance needs to be resolved before these scores are used in clinical care.</p>
   </section>
 
   <section id="people">
@@ -345,10 +339,21 @@ raw_html(
       </div>
     </div>
   </section>
+```
 
-  <section id="publications">
-    <h2>Publications</h2>
-    <p>The lab has published more than 100 papers, in journals including <i>JAMA</i>, <i>Nature Genetics</i>, and <i>Circulation</i>. Recent work:</p>
+```{r publications-intro, echo = FALSE, results = "asis"}
+# Count the entries in the bibliography that this build downloaded, so the number
+# in the text always matches the list on publications.html
+bib_lines <- readLines(params$bibliography_file, warn = FALSE)
+n_publications <- sum(
+  grepl("^@", bib_lines) & !grepl("^@(comment|string|preamble)", bib_lines, ignore.case = TRUE)
+)
+stopifnot(n_publications > 0)
+raw_html(
+  '  <section id="publications">\n    <h2>Publications</h2>\n',
+  '    <p>The lab has published ', n_publications, ' papers and preprints, including work in ',
+  '<i>JAMA</i>, <i>Nature Genetics</i>, and <i>Circulation</i>. Recent work:</p>'
+)
 ```
 
 ::: {#refs}
@@ -387,4 +392,4 @@ if (has_gallery) {
 </main>
 ```
 
-<div class="wrap foot">Last updated `{r} format(Sys.Date(), "%B %d, %Y")`</div>
+<div class="wrap foot">Publications updated `{r} sub(" 0", " ", format(Sys.Date(), "%B %d, %Y"), fixed = TRUE)`</div>
