@@ -21,9 +21,11 @@ format:
           <meta property="og:image:height" content="630" />
           <meta property="og:image:alt" content="Levin Lab wordmark. University of Pennsylvania and Philadelphia VA Medical Center." />
           <meta name="twitter:card" content="summary_large_image" />
-          <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
-          <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
-          <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+          <!-- "?v=2" changes the address of each icon without changing the file. Browsers keep a
+               favicon for a long time under its address, so raise the number whenever the icons change. -->
+          <link rel="icon" href="assets/favicon.svg?v=2" type="image/svg+xml">
+          <link rel="icon" href="assets/favicon-32.png?v=2" type="image/png" sizes="32x32">
+          <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=2">
 csl: "templates/american-medical-association-no-et-al-v2.csl"
 citeproc: false
 bibliography: manuscripts.bib
