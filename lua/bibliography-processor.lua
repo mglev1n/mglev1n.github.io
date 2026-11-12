@@ -23,48 +23,6 @@ local function citeproc(doc)
   end
 end
 
--- Extract year from entry - multiple patterns for maximum flexibility
-local function extract_year(blocks)
-  local text = pandoc.utils.stringify(blocks)
-
-  -- Try multiple patterns in order of specificity
-  local patterns = {
-    -- Traditional formats with volume/issue
-    "%.%s*(%d%d%d%d);",           -- . 2025;14(23)
-    "%.%s*(%d%d%d%d):",           -- . 2025:347
-
-    -- Online-first / no volume formats
-    "%.%s*(%d%d%d%d)%.:e",        -- . 2025.:e038921 (article ID)
-    "%.%s*(%d%d%d%d)%.%s+doi:",   -- . 2025. doi:
-    "%.%s*(%d%d%d%d)%.%s+http",   -- . 2025. http (URL follows)
-
-    -- General formats
-    "%.%s*(%d%d%d%d)%.",          -- . 2025.
-    ",?%s*(%d%d%d%d)%.",          -- , 2025. or 2025.
-    "%((%d%d%d%d)%)",             -- (2025)
-
-    -- Fallback: any 4-digit number that could be a year
-    -- This will match standalone years in various contexts
-    "[^%d](%d%d%d%d)[^%d]",       -- Any 4 digits not adjacent to other digits
-  }
-
-  for _, pattern in ipairs(patterns) do
-    local year = text:match(pattern)
-    if year then
-      local y = tonumber(year)
-      -- Sanity check: year should be reasonable
-      if y >= 1900 and y <= 2100 then
-        io.stderr:write("  Extracted year " .. y .. " using pattern: " .. pattern .. "\n")
-        return y
-      end
-    end
-  end
-
-  -- If no pattern matched, log the text for debugging
-  io.stderr:write("  WARNING: Could not extract year from: " .. text:sub(1, 100) .. "...\n")
-  return nil
-end
-
 -- Get the #refs div
 local function get_refs_div(doc)
   local refs_div = nil
@@ -103,23 +61,22 @@ function Pandoc(doc)
   local one_paragraph_count = 0
   local year_count = 0
   local entries_without_year = 0
+  local undated = {}  -- entries with no usable date, listed after all the others
 
   for _, block in ipairs(refs_div.content) do
     if block.t == "Div" and block.classes:includes("csl-entry") then
       entry_count = entry_count + 1
 
-      -- Extract year from this entry. The citation style puts marker characters in
-      -- each entry (see lua/publication-entry.lua), so the year is read from a copy
-      -- without the markers, which reads as one plain citation:
-      -- "12. Authors. Title. Journal. Year;Vol:Pages. doi:..."
-      local year = extract_year(pub.without_markers(block).content)
+      -- The year comes from the reference's date field (year_of in
+      -- lua/publication-entry.lua). A reference with no usable date is never given
+      -- a year guessed from other numbers in the entry: it is set aside and listed
+      -- at the end, under "Undated".
+      local year = pub.year_of(block)
 
       if not year then
         entries_without_year = entries_without_year + 1
-      end
-
-      -- If year changed, add a header
-      if year and year ~= current_year then
+      elseif year ~= current_year then
+        -- The year changed: add a header
         io.stderr:write("  Adding year header: " .. year .. "\n")
         table.insert(new_content, pandoc.Header(3, {pandoc.Str(tostring(year))}))
         current_year = year
@@ -135,6 +92,17 @@ function Pandoc(doc)
       if not done.three_lines then one_paragraph_count = one_paragraph_count + 1 end
 
       -- Add the entry
+      if year then
+        table.insert(new_content, entry)
+      else
+        table.insert(undated, entry)
+      end
+    end
+  end
+
+  if #undated > 0 then
+    table.insert(new_content, pandoc.Header(3, {pandoc.Str("Undated")}))
+    for _, entry in ipairs(undated) do
       table.insert(new_content, entry)
     end
   end
@@ -144,7 +112,7 @@ function Pandoc(doc)
   io.stderr:write("Emphasised Levin in " .. total_highlighted .. " entries\n")
 
   if entries_without_year > 0 then
-    io.stderr:write("WARNING: " .. entries_without_year .. " entries without detectable year\n")
+    io.stderr:write("WARNING: " .. entries_without_year .. " entries have no date and are listed under Undated\n")
   end
 
   if one_paragraph_count > 0 then

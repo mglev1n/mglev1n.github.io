@@ -7,6 +7,11 @@ on:
 
   # Allow manual triggering
   workflow_dispatch:
+    inputs:
+      allow_count_drop:
+        description: "Allow a much shorter publication list (skips the partial-download check)"
+        type: boolean
+        default: false
 
   # Run on pushes to main branch
   push:
@@ -35,6 +40,8 @@ jobs:
       ZOTERO_USER_ID: ${{ secrets.ZOTERO_USER_ID }}
       ZOTERO_API_KEY: ${{ secrets.ZOTERO_API_KEY }}
       ZOTERO_COLLECTION_KEY: ${{ secrets.ZOTERO_COLLECTION_KEY }}
+      # "true" only when the workflow is run by hand with that box ticked (see index.qmd)
+      ALLOW_COUNT_DROP: ${{ inputs.allow_count_drop }}
       RENV_PATHS_ROOT: ~/.local/share/renv
 
     steps:
@@ -233,3 +240,44 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
+  # The repository is public, and GitHub switches off scheduled workflows in a public
+  # repository after 60 days without activity. The nightly update would then stop with
+  # no notice. Re-enabling the workflow through the API each night is the usual way to
+  # keep the schedule running.
+  keep-schedule-alive:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Re-enable this workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/update-site.yml/enable"
+
+  # If the build or the deploy fails, the live site keeps its last version and nothing
+  # else says so. This opens an issue, or adds a comment to the one already open, which
+  # GitHub emails to the repository's owner.
+  report-failure:
+    needs: [build, deploy]
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update an issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Website build failed"
+          body="The website build or deploy failed, so the live site was not updated. It still shows its last good version.
+
+          Failed run: ${RUN_URL}"
+          number=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --repo "$GITHUB_REPOSITORY" --body "$body"
+          else
+            gh issue create --repo "$GITHUB_REPOSITORY" --title "$title" --body "$body"
+          fi

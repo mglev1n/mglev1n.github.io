@@ -4,7 +4,8 @@
 --
 -- It does two jobs. Before citeproc runs, M.prepare_references corrects two things
 -- in the bibliography data (preprints and institutions entered as people; see the
--- end of this file). After citeproc runs, M.format lays out each entry.
+-- end of this file) and notes each reference's year. After citeproc runs, M.format
+-- lays out each entry and M.year_of gives its year.
 --
 -- It turns one bibliography entry, as citeproc formats it, into the three lines
 -- the site shows:
@@ -418,6 +419,30 @@ local function as_institution(author)
   return { literal = spelled }
 end
 
+-- The year of each reference, by reference id. M.prepare_references fills it in.
+local YEAR_OF = {}
+
+-- The year from a reference's date field, or nil if it has no date or the year is
+-- not believable (before 1900, or later than next year).
+local function issued_year(ref)
+  local issued = ref.issued
+  local parts = type(issued) == "table" and issued["date-parts"]
+  local year = parts and parts[1] and tonumber(parts[1][1])
+  if not year or year < 1900 or year > tonumber(os.date("%Y")) + 1 then
+    return nil
+  end
+  return math.floor(year)
+end
+
+-- The publication year of an entry (a Div with class csl-entry), or nil if its
+-- reference has no usable date. The year is read from the bibliography's date
+-- field, never from the formatted text: page numbers and DOIs also hold four
+-- digits in a row, and an entry with no date used to pick one of those up as its year.
+function M.year_of(entry)
+  local id = entry.identifier:gsub("^ref%-", "")
+  return YEAR_OF[id]
+end
+
 -- Corrects the bibliography data before citeproc formats it. Call it on the
 -- document just before citeproc.
 --
@@ -439,6 +464,7 @@ function M.prepare_references(doc)
 
   for _, ref in ipairs(pandoc.utils.references(doc)) do
     local changed = false
+    YEAR_OF[ref.id] = issued_year(ref)
 
     local venue = stringify(ref.publisher or "") .. " " .. stringify(ref["container-title"] or "")
     local server = venue:match("%a*[Rr][Xx][Ii][Vv]%a*")

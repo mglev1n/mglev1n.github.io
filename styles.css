@@ -2,7 +2,11 @@
    Black text on white, Newsreader serif, black links with a grey underline.
    Used by index.qmd and publications.qmd. */
 
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..500&display=swap');
+/* Newsreader, limited to what the pages use. Upright: weights 400 to 600 with the
+   optical-size axis, which gives the wordmark and headings their display letterforms.
+   Italic: one fixed weight for journal names and notes, without that axis. This is
+   about 156 KB of font files on a first visit; the earlier, wider request was 271 KB. */
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400..600&family=Newsreader:ital@1&display=swap');
 
 :root {
   --bg:     #ffffff;
@@ -29,6 +33,14 @@ body {
 }
 
 img { display: block; max-width: 100%; }
+
+/* Text that is in the page for search engines, reader views, and copy and paste, but is
+   not drawn and takes no room. The wordmark uses it for its letters I and A, which are
+   drawings (assets/logo.html). */
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+}
 
 a {
   color: var(--link);
