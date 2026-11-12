@@ -170,11 +170,15 @@ end
 
 -- Check authorship note for equal contribution
 local function has_equal_contribution_note(text)
-  -- Check for equal contribution language
+  -- Check for language that marks shared first or senior authorship: equal
+  -- contribution, or joint supervision ("MGL and SMD jointly supervised")
   local has_equal_language = text:match("[Cc]ontributed equally") or
                              text:match("[Ee]qual contribution") or
                              text:match("co%-first") or
-                             text:match("co%-senior")
+                             text:match("co%-senior") or
+                             text:match("[Jj]ointly supervis") or
+                             text:match("[Cc]o%-supervis") or
+                             text:match("[Jj]ointly directed")
 
   if not has_equal_language then
     return false
@@ -264,6 +268,7 @@ function Pandoc(doc)
         table.insert(qualifying_entries, {
           block = block,
           plain = plain,
+          position = #qualifying_entries + 1,  -- place in the bibliography, which is newest first
           year = year or 0,
           is_first = is_first,
           is_senior = is_senior,
@@ -284,8 +289,14 @@ function Pandoc(doc)
   io.stderr:write("\nTotal qualifying entries: " .. #qualifying_entries .. "\n")
 
   -- Sort by year (descending)
+  -- Within a year, keep the bibliography's own order (newest first). Lua's sort does
+  -- not keep the order of entries that compare equal, so the position breaks the tie;
+  -- without it the choice among papers from the same year was arbitrary.
   table.sort(qualifying_entries, function(a, b)
-    return a.year > b.year
+    if a.year ~= b.year then
+      return a.year > b.year
+    end
+    return a.position < b.position
   end)
 
   -- Take only N most recent
