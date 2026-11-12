@@ -157,12 +157,12 @@ section p + p { margin-top: 12px; }
      .pub-authors  the authors, with Levin's name in <strong>
      .pub-venue    journal, year, volume, pages, and the DOI, which is the entry's link;
                    on publications.html also the authorship note
-   The title is semibold and in the body ink colour, so it stands apart from the grey
-   author and venue lines; Levin's name is the only other ink-coloured text.
+   The title is medium weight and in the body ink colour, so it stands apart from the
+   grey author and venue lines; Levin's name is the only other ink-coloured text.
    Every author is listed, so the author block can run to many lines: Levin's name is
    set heavy enough to find in it, and the small gaps keep the venue from reading as
    the block's last line. */
-.pub-title { font-size: 18px; line-height: 1.35; font-weight: 600; }
+.pub-title { font-size: 18px; line-height: 1.35; font-weight: 500; }
 .pub-authors,
 .pub-venue { color: var(--muted); font-size: 15px; line-height: 1.45; margin-top: 3px; }
 .pub-authors strong { color: var(--text); font-weight: 600; white-space: nowrap; }
@@ -185,7 +185,7 @@ section p + p { margin-top: 12px; }
 
 /* year headings from bibliography-processor.lua */
 #refs h2, #refs h3 {
-  font-size: 22px; font-weight: 600;  /* larger than the semibold titles beneath them */
+  font-size: 19px; font-weight: 600;
   margin: 32px 0 6px; padding-bottom: 0; border: none;
 }
 #refs h2:first-child, #refs h3:first-child { margin-top: 8px; }
