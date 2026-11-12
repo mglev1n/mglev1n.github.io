@@ -344,11 +344,13 @@ raw_html(
 
 ```{r publications-intro, echo = FALSE, results = "asis"}
 # Count the entries in the bibliography that this build downloaded, so the number
-# in the text always matches the list on publications.html
+# in the text matches the list on publications.html. Entries that share a citation
+# key count once, because pandoc renders only one entry per key.
 bib_lines <- readLines(params$bibliography_file, warn = FALSE)
-n_publications <- sum(
-  grepl("^@", bib_lines) & !grepl("^@(comment|string|preamble)", bib_lines, ignore.case = TRUE)
-)
+entry_lines <- grep("^@[A-Za-z]+\\{", bib_lines, value = TRUE)
+entry_lines <- entry_lines[!grepl("^@(comment|string|preamble)", entry_lines, ignore.case = TRUE)]
+bib_keys <- sub("^@[A-Za-z]+\\{\\s*([^,[:space:]]+).*$", "\\1", entry_lines)
+n_publications <- length(unique(bib_keys))
 stopifnot(n_publications > 0)
 raw_html(
   '  <section id="publications">\n    <h2>Publications</h2>\n',
